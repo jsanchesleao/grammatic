@@ -19,9 +19,14 @@ type Token struct {
 
 const DigitsTokenFormat = "^\\d+"
 const IntTokenFormat = "^[123456789]\\d*"
-const KeywordFormat = "^(?i)\\w[-_\\w]*"
+const FloatTokenFormat = "^[123456789]\\d*\\.\\d+"
+const KeywordFormat = "^(?i)[abcdefghijklmnopqrstuvwxyz][-_\\w]*"
 const DoubleQuotedStringFormat = "^\"(\\\"|[^\\\"])*\""
 const EmptySpaceFormat = "^\\s+"
+const OperandFormat = "^[-+/*=]"
+const OpenBracesFormat = "^(\\(|\\[|\\{)"
+const CloseBracesFormat = "^(\\)|\\]|\\})"
+const PunctuationFormat = "^[,;:.]"
 
 func NewTokenDef(name, pattern string) TokenDef {
 	regex := regexp.MustCompile(pattern)
@@ -42,11 +47,16 @@ func ExtractTokens(text string, tokendefs []TokenDef) ([]Token, error) {
 			break
 		}
 
+		nextToken := Token{}
 		if text[index] == '\n' {
-			col = 1
+			nextToken.Col = col + 1
+			nextToken.Line = line
+			col = 0
 			line++
 		} else {
 			col++
+			nextToken.Col = col
+			nextToken.Line = line
 		}
 
 		if skips > 0 {
@@ -56,14 +66,11 @@ func ExtractTokens(text string, tokendefs []TokenDef) ([]Token, error) {
 		}
 
 		remainingText := text[index:]
-		nextToken := Token{}
 		hasToken := false
 		for _, def := range tokendefs {
 			if match := def.Pattern.FindString(remainingText); match != "" {
 				nextToken.Name = def.Name
 				nextToken.Value = match
-				nextToken.Line = line
-				nextToken.Col = col
 				hasToken = true
 				skips = len(match) - 1
 				break
