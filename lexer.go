@@ -80,7 +80,7 @@ func ExtractTokens(text string, tokendefs []TokenDef) ([]Token, error) {
 			}
 		}
 		if !hasToken {
-			err = fmt.Errorf("Illegal character at %d:%d", line, col)
+			err = fmt.Errorf("Illegal character %q at line %d, column %d", string(text[index]), line, col)
 			break
 		} else {
 			tokens = append(tokens, nextToken)

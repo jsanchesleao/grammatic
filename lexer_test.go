@@ -111,3 +111,23 @@ func TestComplexTokenization(t *testing.T) {
 		{Name: "TOKEN_EOF", Value: "", Line: 7, Col: 0},
 	}, tokens)
 }
+
+func TestIllegalCharacter(t *testing.T) {
+	tokendefs := []TokenDef{
+		NewTokenDef("Keyword", KeywordFormat),
+		NewTokenDef("Space", EmptySpaceFormat),
+	}
+
+	text := "keyw and : err"
+	_, err := ExtractTokens(text, tokendefs)
+
+	if err == nil {
+		t.Fatal("Tokenization should have generated an error, but it did not")
+	}
+
+	expectedMessage := "Illegal character \":\" at line 1, column 10"
+	if err.Error() != expectedMessage {
+		t.Fatalf("Error message was expected to be: \n%q\nbut was :\n%q\n", expectedMessage, err.Error())
+	}
+
+}
