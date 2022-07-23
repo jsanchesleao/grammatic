@@ -5,11 +5,21 @@ import (
 	"regexp"
 )
 
+// TokenDef represents a definition to generate tokens of a particular type
+// It requires a name, that will be present in the generated token for identification
+// Also needs a regexp pattern, to check the input string.
+// It's important that the regexp begins with a ^, to make it search the beginning of the string.
+// There are some convenience regexp patterns exported from this package,
+// like KeywordFormat and FloatTokenFormat.
 type TokenDef struct {
 	Name    string
 	Pattern *regexp.Regexp
 }
 
+// Token represents a meaningful part of the input string, to be used later by the parser.
+// The token carries the name defined in the matching TokenDef, as well as the string part
+// that matches the pattern, and also line and column numbers, for better error recognition
+// in the input string.
 type Token struct {
 	Name  string
 	Value string
@@ -30,11 +40,23 @@ const OpenBracesFormat = "^(\\(|\\[|\\{)"
 const CloseBracesFormat = "^(\\)|\\]|\\})"
 const PunctuationFormat = "^[,;:.]"
 
+// Convenience function to create a TokenDef, that compiles the regexp pattern.
+// This is specially convenient when used with the provided patters.
+// i.e grammatic.NewTokenDef("EmptySpace", grammatic.EmptySpaceFormat)
 func NewTokenDef(name, pattern string) TokenDef {
 	regex := regexp.MustCompile(pattern)
 	return TokenDef{Name: name, Pattern: regex}
 }
 
+// Accepts an input string and a slice of TokenDef, and returns a slice of tokens when successful,
+// or an error if anything goes wrong
+// All characters existing in the input string must be recognizable in at least one of the
+// tokendefs, otherwise an "Illegal Character" error will be generated.
+// TokenDefs are tested in the order they are passed in to the function, and the first one
+// that matches will generate a Token, so it's a good idea to place more specific TokenDefs
+// first in the slice.
+// At the end, if successful, this function will append an TYPE_EOF token, as the last one,
+// indicating the end of the input. This will always be generated if no error was found.
 func ExtractTokens(text string, tokendefs []TokenDef) ([]Token, error) {
 	tokens := []Token{}
 	line := 1
@@ -89,5 +111,4 @@ func ExtractTokens(text string, tokendefs []TokenDef) ([]Token, error) {
 	}
 
 	return tokens, err
-
 }
