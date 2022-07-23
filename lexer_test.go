@@ -41,6 +41,7 @@ func TestSimpleTokenDef(t *testing.T) {
 		{Name: "Equals", Value: "=", Col: 6, Line: 1},
 		{Name: "Space", Value: " ", Col: 7, Line: 1},
 		{Name: "String", Value: "\"value\"", Col: 8, Line: 1},
+		{Name: "TOKEN_EOF", Value: "", Col: 0, Line: 2},
 	}, tokens)
 
 }
@@ -107,5 +108,6 @@ func TestComplexTokenization(t *testing.T) {
 		{Name: "CloseBraces", Value: ")", Line: 5, Col: 16},
 		{Name: "Space", Value: "\n", Line: 5, Col: 17},
 		{Name: "CloseBraces", Value: ")", Line: 6, Col: 1},
+		{Name: "TOKEN_EOF", Value: "", Line: 7, Col: 0},
 	}, tokens)
 }

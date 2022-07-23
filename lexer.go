@@ -17,6 +17,8 @@ type Token struct {
 	Col   int
 }
 
+const TYPE_EOF = "TOKEN_EOF"
+
 const DigitsTokenFormat = "^\\d+"
 const IntTokenFormat = "^[123456789]\\d*"
 const FloatTokenFormat = "^[123456789]\\d*\\.\\d+"
@@ -44,6 +46,7 @@ func ExtractTokens(text string, tokendefs []TokenDef) ([]Token, error) {
 
 	for {
 		if index >= len(text) {
+			tokens = append(tokens, Token{Name: TYPE_EOF, Value: "", Line: line + 1, Col: 0})
 			break
 		}
 
