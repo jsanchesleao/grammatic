@@ -6,22 +6,22 @@ import (
 )
 
 // TokenDef represents a definition to generate tokens of a particular type
-// It requires a name, that will be present in the generated token for identification
+// It requires a type name, that will be present in the generated token for identification
 // Also needs a regexp pattern, to check the input string.
 // It's important that the regexp begins with a ^, to make it search the beginning of the string.
 // There are some convenience regexp patterns exported from this package,
 // like KeywordFormat and FloatTokenFormat.
 type TokenDef struct {
-	Name    string
+	Type    string
 	Pattern *regexp.Regexp
 }
 
 // Token represents a meaningful part of the input string, to be used later by the parser.
-// The token carries the name defined in the matching TokenDef, as well as the string part
+// The token carries the type defined in the matching TokenDef, as well as the string part
 // that matches the pattern, and also line and column numbers, for better error recognition
 // in the input string.
 type Token struct {
-	Name  string
+	Type  string
 	Value string
 	Line  int
 	Col   int
@@ -43,9 +43,9 @@ const PunctuationFormat = "^[,;:.]"
 // Convenience function to create a TokenDef, that compiles the regexp pattern.
 // This is specially convenient when used with the provided patters.
 // i.e grammatic.NewTokenDef("EmptySpace", grammatic.EmptySpaceFormat)
-func NewTokenDef(name, pattern string) TokenDef {
+func NewTokenDef(tokenType, pattern string) TokenDef {
 	regex := regexp.MustCompile(pattern)
-	return TokenDef{Name: name, Pattern: regex}
+	return TokenDef{Type: tokenType, Pattern: regex}
 }
 
 // Accepts an input string and a slice of TokenDef, and returns a slice of tokens when successful,
@@ -68,7 +68,7 @@ func ExtractTokens(text string, tokendefs []TokenDef) ([]Token, error) {
 
 	for {
 		if index >= len(text) {
-			tokens = append(tokens, Token{Name: TYPE_EOF, Value: "", Line: line + 1, Col: 0})
+			tokens = append(tokens, Token{Type: TYPE_EOF, Value: "", Line: line + 1, Col: 0})
 			break
 		}
 
@@ -94,7 +94,7 @@ func ExtractTokens(text string, tokendefs []TokenDef) ([]Token, error) {
 		hasToken := false
 		for _, def := range tokendefs {
 			if match := def.Pattern.FindString(remainingText); match != "" {
-				nextToken.Name = def.Name
+				nextToken.Type = def.Type
 				nextToken.Value = match
 				hasToken = true
 				skips = len(match) - 1

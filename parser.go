@@ -3,24 +3,24 @@ package grammatic
 import "fmt"
 
 type RuleMatch struct {
-	name   string
-	tokens []Token
-	rules  []RuleMatch
+	Type   string
+	Tokens []Token
+	Rules  []RuleMatch
 }
 
 type RuleDef struct {
-	name  string
-	check func([]Token) (*RuleMatch, []Token) // returns (matched tokens, remaining tokens)
+	Type  string
+	Check func([]Token) (*RuleMatch, []Token) // returns (matched tokens, remaining tokens)
 }
 
-func RuleTokenName(name string, tokenName string) RuleDef {
+func RuleTokenName(ruleType string, tokenType string) RuleDef {
 	return RuleDef{
-		name: name,
-		check: func(tokens []Token) (*RuleMatch, []Token) {
+		Type: ruleType,
+		Check: func(tokens []Token) (*RuleMatch, []Token) {
 			if len(tokens) < 1 {
 				return nil, tokens
-			} else if tokens[0].Name == tokenName {
-				return &RuleMatch{name: name, tokens: tokens[0:1], rules: nil}, tokens[1:]
+			} else if tokens[0].Type == tokenType {
+				return &RuleMatch{Type: ruleType, Tokens: tokens[0:1], Rules: nil}, tokens[1:]
 			} else {
 				return nil, tokens
 			}
@@ -28,14 +28,14 @@ func RuleTokenName(name string, tokenName string) RuleDef {
 	}
 }
 
-func RuleTokenNameAndValue(name, value, tokenName string) RuleDef {
+func RuleTokenNameAndValue(ruleType, value, tokenType string) RuleDef {
 	return RuleDef{
-		name: name,
-		check: func(tokens []Token) (*RuleMatch, []Token) {
+		Type: ruleType,
+		Check: func(tokens []Token) (*RuleMatch, []Token) {
 			if len(tokens) < 1 {
 				return nil, tokens
-			} else if tokens[0].Name == tokenName && tokens[0].Value == value {
-				return &RuleMatch{name: name, tokens: tokens[0:1], rules: nil}, tokens[1:]
+			} else if tokens[0].Type == tokenType && tokens[0].Value == value {
+				return &RuleMatch{Type: ruleType, Tokens: tokens[0:1], Rules: nil}, tokens[1:]
 			} else {
 				return nil, tokens
 			}
@@ -43,14 +43,14 @@ func RuleTokenNameAndValue(name, value, tokenName string) RuleDef {
 	}
 }
 
-func Or(name string, rules ...RuleDef) RuleDef {
+func Or(ruleType string, rules ...RuleDef) RuleDef {
 	return RuleDef{
-		name: name,
-		check: func(tokens []Token) (*RuleMatch, []Token) {
+		Type: ruleType,
+		Check: func(tokens []Token) (*RuleMatch, []Token) {
 			for _, rule := range rules {
-				match, remaining := rule.check(tokens)
+				match, remaining := rule.Check(tokens)
 				if match != nil {
-					return &RuleMatch{name: name, tokens: nil, rules: []RuleMatch{*match}}, remaining
+					return &RuleMatch{Type: ruleType, Tokens: nil, Rules: []RuleMatch{*match}}, remaining
 				}
 			}
 			return nil, tokens
@@ -58,14 +58,14 @@ func Or(name string, rules ...RuleDef) RuleDef {
 	}
 }
 
-func Seq(name string, rules ...RuleDef) RuleDef {
+func Seq(ruleType string, rules ...RuleDef) RuleDef {
 	return RuleDef{
-		name: name,
-		check: func(tokens []Token) (*RuleMatch, []Token) {
+		Type: ruleType,
+		Check: func(tokens []Token) (*RuleMatch, []Token) {
 			remainingTokens := tokens
 			matches := []RuleMatch{}
 			for _, rule := range rules {
-				match, rest := rule.check(remainingTokens)
+				match, rest := rule.Check(remainingTokens)
 				if match != nil {
 					remainingTokens = rest
 					matches = append(matches, *match)
@@ -73,20 +73,20 @@ func Seq(name string, rules ...RuleDef) RuleDef {
 					return nil, tokens
 				}
 			}
-			return &RuleMatch{name: name, tokens: nil, rules: matches}, remainingTokens
+			return &RuleMatch{Type: ruleType, Tokens: nil, Rules: matches}, remainingTokens
 		},
 	}
 }
 
-func Mult(name string, rule RuleDef) RuleDef {
+func Mult(ruleType string, rule RuleDef) RuleDef {
 	return RuleDef{
-		name: name,
-		check: func(tokens []Token) (*RuleMatch, []Token) {
+		Type: ruleType,
+		Check: func(tokens []Token) (*RuleMatch, []Token) {
 			remainingTokens := tokens
 			matches := []RuleMatch{}
 			done := false
 			for !done {
-				match, rest := rule.check(remainingTokens)
+				match, rest := rule.Check(remainingTokens)
 				if match != nil {
 					remainingTokens = rest
 					matches = append(matches, *match)
@@ -96,14 +96,14 @@ func Mult(name string, rule RuleDef) RuleDef {
 					return nil, tokens
 				}
 			}
-			return &RuleMatch{name: name, tokens: nil, rules: matches}, remainingTokens
+			return &RuleMatch{Type: ruleType, Tokens: nil, Rules: matches}, remainingTokens
 		},
 	}
 }
 
-func shouldIgnore(ignoredTokenNames []string, token *Token) bool {
-	for _, name := range ignoredTokenNames {
-		if name == token.Name {
+func shouldIgnore(ignoredTypes []string, token *Token) bool {
+	for _, name := range ignoredTypes {
+		if name == token.Type {
 			return true
 		}
 	}
@@ -117,7 +117,7 @@ func ParseRule(rule RuleDef, ignoredTokenNames []string, tokens []Token) (*RuleM
 			validTokens = append(validTokens, token)
 		}
 	}
-	match, remaining := rule.check(validTokens)
+	match, remaining := rule.Check(validTokens)
 
 	if len(remaining) != 0 {
 		return nil, fmt.Errorf("Parsing failed: trailing tokens %+v", remaining)
