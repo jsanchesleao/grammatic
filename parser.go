@@ -13,7 +13,7 @@ type RuleDef struct {
 	Check func([]Token) (*RuleMatch, []Token) // returns (matched tokens, remaining tokens)
 }
 
-func RuleTokenName(ruleType string, tokenType string) RuleDef {
+func RuleTokenType(ruleType string, tokenType string) RuleDef {
 	return RuleDef{
 		Type: ruleType,
 		Check: func(tokens []Token) (*RuleMatch, []Token) {
@@ -28,7 +28,7 @@ func RuleTokenName(ruleType string, tokenType string) RuleDef {
 	}
 }
 
-func RuleTokenNameAndValue(ruleType, value, tokenType string) RuleDef {
+func RuleTokenTypeAndValue(ruleType, tokenType, value string) RuleDef {
 	return RuleDef{
 		Type: ruleType,
 		Check: func(tokens []Token) (*RuleMatch, []Token) {

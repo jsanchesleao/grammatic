@@ -2,22 +2,6 @@ package grammatic
 
 import "testing"
 
-func assertTokenEquals(t *testing.T, expected, actual Token) {
-	if expected.Type != actual.Type || expected.Value != actual.Value || expected.Col != actual.Col || expected.Line != actual.Line {
-		t.Fatalf("Expected %+v but found %+v", expected, actual)
-	}
-}
-
-func assertTokenList(t *testing.T, expected, actual []Token) {
-	if len(expected) != len(actual) {
-		t.Logf("Should have generated %d tokens, but instead was %d", len(expected), len(actual))
-		t.Fail()
-	}
-	for i, _ := range expected {
-		assertTokenEquals(t, expected[i], actual[i])
-	}
-}
-
 func TestSimpleTokenDef(t *testing.T) {
 
 	tokendefs := []TokenDef{
@@ -35,7 +19,7 @@ func TestSimpleTokenDef(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
-	assertTokenList(t, []Token{
+	AssertTokenList(t, []Token{
 		{Type: "Keyword", Value: "prop", Col: 1, Line: 1},
 		{Type: "Space", Value: " ", Col: 5, Line: 1},
 		{Type: "Equals", Value: "=", Col: 6, Line: 1},
@@ -74,7 +58,7 @@ func TestComplexTokenization(t *testing.T) {
 		t.Fail()
 	}
 
-	assertTokenList(t, []Token{
+	AssertTokenList(t, []Token{
 		{Type: "OpenBraces", Value: "(", Line: 1, Col: 1},
 		{Type: "Space", Value: "\n  ", Line: 1, Col: 2},
 		{Type: "Keyword", Value: "num", Line: 2, Col: 3},
