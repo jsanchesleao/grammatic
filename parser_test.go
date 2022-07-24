@@ -115,7 +115,6 @@ func TestOr(t *testing.T) {
 }
 
 func TestSeq(t *testing.T) {
-
 	tokensSuccess := []Token{int_token, keyword_token, eof_token}
 	tokensFail := []Token{int_token, string_token, eof_token}
 
@@ -153,4 +152,84 @@ func TestSeq(t *testing.T) {
 		Tokens: nil,
 	}, *match)
 
+}
+
+func TestMany(t *testing.T) {
+	rule := Many("MultipleInts", RuleTokenType("IntRule", "TOKEN_INT"))
+	tokensSuccess := []Token{int_token, int_token, eof_token}
+	tokensFail := []Token{keyword_token, keyword_token, eof_token}
+
+	match, remaining := rule.Check(tokensSuccess)
+	matchFail, remainingFail := rule.Check(tokensFail)
+
+	if match == nil {
+		t.Fatalf("Rule %q should have matched two tokens, but match was nil", rule.Type)
+	}
+
+	if matchFail == nil {
+		t.Fatalf("Rule %q should have matched a non nil value, with empty rules, but was nil", rule.Type)
+	}
+
+	AssertTokenList(t, []Token{eof_token}, remaining)
+	AssertTokenList(t, tokensFail, remainingFail)
+
+	AssertRuleMatchEquals(t, RuleMatch{
+		Type: "MultipleInts",
+		Rules: []RuleMatch{
+			{
+				Type:   "IntRule",
+				Rules:  nil,
+				Tokens: []Token{int_token},
+			},
+			{
+				Type:   "IntRule",
+				Rules:  nil,
+				Tokens: []Token{int_token},
+			},
+		},
+		Tokens: nil,
+	}, *match)
+
+	AssertRuleMatchEquals(t, RuleMatch{
+		Type:   "MultipleInts",
+		Rules:  nil,
+		Tokens: nil,
+	}, *matchFail)
+}
+
+func TestOneOrMany(t *testing.T) {
+	rule := OneOrMany("MultipleIntsAtLeastOne", RuleTokenType("IntRule", "TOKEN_INT"))
+	tokensSuccess := []Token{int_token, int_token, eof_token}
+	tokensFail := []Token{keyword_token, keyword_token, eof_token}
+
+	match, remaining := rule.Check(tokensSuccess)
+	matchFail, remainingFail := rule.Check(tokensFail)
+
+	if match == nil {
+		t.Fatalf("Rule %q should have matched two tokens, but match was nil", rule.Type)
+	}
+
+	if matchFail != nil {
+		t.Fatalf("Rule %q should not have matched on tokensFail, but it matched %#v", rule.Type, matchFail)
+	}
+
+	AssertTokenList(t, []Token{eof_token}, remaining)
+	AssertTokenList(t, tokensFail, remainingFail)
+
+	AssertRuleMatchEquals(t, RuleMatch{
+		Type: "MultipleIntsAtLeastOne",
+		Rules: []RuleMatch{
+			{
+				Type:   "IntRule",
+				Rules:  nil,
+				Tokens: []Token{int_token},
+			},
+			{
+				Type:   "IntRule",
+				Rules:  nil,
+				Tokens: []Token{int_token},
+			},
+		},
+		Tokens: nil,
+	}, *match)
 }

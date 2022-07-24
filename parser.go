@@ -78,7 +78,28 @@ func Seq(ruleType string, rules ...RuleDef) RuleDef {
 	}
 }
 
-func Mult(ruleType string, rule RuleDef) RuleDef {
+func Many(ruleType string, rule RuleDef) RuleDef {
+	return RuleDef{
+		Type: ruleType,
+		Check: func(tokens []Token) (*RuleMatch, []Token) {
+			remainingTokens := tokens
+			matches := []RuleMatch{}
+			done := false
+			for !done {
+				match, rest := rule.Check(remainingTokens)
+				if match != nil {
+					remainingTokens = rest
+					matches = append(matches, *match)
+				} else {
+					done = true
+				}
+			}
+			return &RuleMatch{Type: ruleType, Tokens: nil, Rules: matches}, remainingTokens
+		},
+	}
+}
+
+func OneOrMany(ruleType string, rule RuleDef) RuleDef {
 	return RuleDef{
 		Type: ruleType,
 		Check: func(tokens []Token) (*RuleMatch, []Token) {
