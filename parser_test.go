@@ -90,8 +90,6 @@ func TestOr(t *testing.T) {
 		t.Fatalf("Rule %q should not have matched a TOKEN_STRING token.\n %+v", rule.Type, stringMatch)
 	}
 
-	fmt.Printf("INT MATCH\n\n%#v\n\n", intMatch)
-
 	AssertRuleMatchEquals(t, RuleMatch{
 		Type: "KeywordOrIntRule",
 		Rules: []RuleMatch{
