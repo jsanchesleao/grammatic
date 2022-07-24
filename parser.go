@@ -13,8 +13,8 @@ type RuleDef struct {
 	Check func([]Token) (*RuleMatch, []Token) // returns (matched tokens, remaining tokens)
 }
 
-func RuleTokenType(ruleType string, tokenType string) RuleDef {
-	return RuleDef{
+func RuleTokenType(ruleType string, tokenType string) *RuleDef {
+	return &RuleDef{
 		Type: ruleType,
 		Check: func(tokens []Token) (*RuleMatch, []Token) {
 			if len(tokens) < 1 {
@@ -28,8 +28,8 @@ func RuleTokenType(ruleType string, tokenType string) RuleDef {
 	}
 }
 
-func RuleTokenTypeAndValue(ruleType, tokenType, value string) RuleDef {
-	return RuleDef{
+func RuleTokenTypeAndValue(ruleType, tokenType, value string) *RuleDef {
+	return &RuleDef{
 		Type: ruleType,
 		Check: func(tokens []Token) (*RuleMatch, []Token) {
 			if len(tokens) < 1 {
@@ -43,8 +43,8 @@ func RuleTokenTypeAndValue(ruleType, tokenType, value string) RuleDef {
 	}
 }
 
-func Or(ruleType string, rules ...RuleDef) RuleDef {
-	return RuleDef{
+func Or(ruleType string, rules ...*RuleDef) *RuleDef {
+	return &RuleDef{
 		Type: ruleType,
 		Check: func(tokens []Token) (*RuleMatch, []Token) {
 			for _, rule := range rules {
@@ -58,8 +58,8 @@ func Or(ruleType string, rules ...RuleDef) RuleDef {
 	}
 }
 
-func Seq(ruleType string, rules ...RuleDef) RuleDef {
-	return RuleDef{
+func Seq(ruleType string, rules ...*RuleDef) *RuleDef {
+	return &RuleDef{
 		Type: ruleType,
 		Check: func(tokens []Token) (*RuleMatch, []Token) {
 			remainingTokens := tokens
@@ -78,8 +78,8 @@ func Seq(ruleType string, rules ...RuleDef) RuleDef {
 	}
 }
 
-func Many(ruleType string, rule RuleDef) RuleDef {
-	return RuleDef{
+func Many(ruleType string, rule *RuleDef) *RuleDef {
+	return &RuleDef{
 		Type: ruleType,
 		Check: func(tokens []Token) (*RuleMatch, []Token) {
 			remainingTokens := tokens
@@ -99,8 +99,8 @@ func Many(ruleType string, rule RuleDef) RuleDef {
 	}
 }
 
-func OneOrMany(ruleType string, rule RuleDef) RuleDef {
-	return RuleDef{
+func OneOrMany(ruleType string, rule *RuleDef) *RuleDef {
+	return &RuleDef{
 		Type: ruleType,
 		Check: func(tokens []Token) (*RuleMatch, []Token) {
 			remainingTokens := tokens
@@ -118,6 +118,20 @@ func OneOrMany(ruleType string, rule RuleDef) RuleDef {
 				}
 			}
 			return &RuleMatch{Type: ruleType, Tokens: nil, Rules: matches}, remainingTokens
+		},
+	}
+}
+
+func OneOrNone(ruleType string, rule *RuleDef) *RuleDef {
+	return &RuleDef{
+		Type: ruleType,
+		Check: func(tokens []Token) (*RuleMatch, []Token) {
+			result := RuleMatch{Type: ruleType, Rules: []RuleMatch{}, Tokens: nil}
+			match, remaining := rule.Check(tokens)
+			if match != nil {
+				result.Rules = append(result.Rules, *match)
+			}
+			return &result, remaining
 		},
 	}
 }

@@ -5,6 +5,7 @@ import "testing"
 var int_token = Token{Type: "TOKEN_INT", Value: "1", Line: 1, Col: 1}
 var keyword_token = Token{Type: "TOKEN_KEYWORD", Value: "test", Line: 1, Col: 1}
 var string_token = Token{Type: "TOKEN_STRING", Value: "text", Line: 1, Col: 1}
+var space_token = Token{Type: "TOKEN_SPACE", Value: "text", Line: 1, Col: 1}
 var eof_token = Token{Type: "TOKEN_EOF", Value: "1", Line: 1, Col: 1}
 
 func TestSimpleRuleMatch(t *testing.T) {
@@ -151,6 +152,44 @@ func TestSeq(t *testing.T) {
 		},
 		Tokens: nil,
 	}, *match)
+
+}
+
+func TestOneOrNone(t *testing.T) {
+	rule := OneOrNone("MaybeInt", RuleTokenType("IntRule", "TOKEN_INT"))
+
+	tokensSuccess := []Token{int_token, eof_token}
+	tokensFail := []Token{string_token, eof_token}
+
+	match, remaining := rule.Check(tokensSuccess)
+	matchFail, remainingFail := rule.Check(tokensFail)
+
+	if match == nil {
+		t.Fatalf("Rule %q should never return nil, but it did when it should match one token", rule.Type)
+	}
+	if matchFail == nil {
+		t.Fatalf("Rule %q should never return nil, but it did when it should match zero tokens", rule.Type)
+	}
+	AssertRuleMatchEquals(t, RuleMatch{
+		Type: "MaybeInt",
+		Rules: []RuleMatch{
+			{
+				Type:   "IntRule",
+				Rules:  nil,
+				Tokens: []Token{int_token},
+			},
+		},
+		Tokens: nil,
+	}, *match)
+
+	AssertRuleMatchEquals(t, RuleMatch{
+		Type:   "MaybeInt",
+		Rules:  []RuleMatch{},
+		Tokens: nil,
+	}, *matchFail)
+
+	AssertTokenList(t, []Token{eof_token}, remaining)
+	AssertTokenList(t, tokensFail, remainingFail)
 
 }
 
