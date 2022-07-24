@@ -1,9 +1,6 @@
 package grammatic
 
-import (
-	"fmt"
-	"testing"
-)
+import "testing"
 
 var int_token = Token{Type: "TOKEN_INT", Value: "1", Line: 1, Col: 1}
 var keyword_token = Token{Type: "TOKEN_KEYWORD", Value: "test", Line: 1, Col: 1}
@@ -115,4 +112,45 @@ func TestOr(t *testing.T) {
 	AssertTokenList(t, []Token{eof_token}, remainingInt)
 	AssertTokenList(t, []Token{eof_token}, remainingKeyword)
 	AssertTokenList(t, tokensWithString, remainingString)
+}
+
+func TestSeq(t *testing.T) {
+
+	tokensSuccess := []Token{int_token, keyword_token, eof_token}
+	tokensFail := []Token{int_token, string_token, eof_token}
+
+	rule := Seq("IntThenKeyword",
+		RuleTokenType("IntRule", "TOKEN_INT"),
+		RuleTokenType("KeywordRule", "TOKEN_KEYWORD"))
+
+	match, remaining := rule.Check(tokensSuccess)
+	matchFail, remainingFail := rule.Check(tokensFail)
+
+	if match == nil {
+		t.Fatalf("Rule %q should have matched two tokens, but match was nil", rule.Type)
+	}
+
+	if matchFail != nil {
+		t.Fatalf("Rule %q should have not matched the tokensFail sequence, but it did.\n%+v", rule.Type, matchFail)
+	}
+
+	AssertTokenList(t, []Token{eof_token}, remaining)
+	AssertTokenList(t, tokensFail, remainingFail)
+	AssertRuleMatchEquals(t, RuleMatch{
+		Type: "IntThenKeyword",
+		Rules: []RuleMatch{
+			{
+				Type:   "IntRule",
+				Rules:  nil,
+				Tokens: []Token{int_token},
+			},
+			{
+				Type:   "KeywordRule",
+				Rules:  nil,
+				Tokens: []Token{keyword_token},
+			},
+		},
+		Tokens: nil,
+	}, *match)
+
 }
