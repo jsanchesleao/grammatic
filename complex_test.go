@@ -1,9 +1,6 @@
 package grammatic
 
-import (
-	"fmt"
-	"testing"
-)
+import "testing"
 
 func buildTokenDefs() []TokenDef {
 
@@ -68,9 +65,62 @@ func TestCompleteParse(t *testing.T) {
 		t.Fatal(errMatch)
 	}
 
-	//fmt.Printf("%+v\n\n", match)
+	keyPairs := match.
+		GetNodeWithType("Value").
+		GetNodeWithType("Object").
+		GetNodeWithType("ObjectBody").
+		GetNodesWithType("ObjectKeyValuePair")
 
-	fmt.Printf("%+v\n\n", match.GetNodeWithType("Value").GetNodeWithType("Object"))
+	nameKeyPair := keyPairs[0]
+
+	AssertRuleMatchEquals(t, RuleMatch{
+		Type: "ObjectKeyValuePair",
+		Rules: []RuleMatch{
+			{
+				Type:  "String",
+				Rules: nil,
+				Tokens: []Token{
+					{
+						Type:  "TOKEN_STRING",
+						Value: `"name"`,
+						Line:  3,
+						Col:   3,
+					},
+				},
+			},
+			{
+				Type:  "Colon",
+				Rules: nil,
+				Tokens: []Token{
+					{
+						Type:  "TOKEN_COLON",
+						Value: `:`,
+						Line:  3,
+						Col:   9,
+					},
+				},
+			},
+			{
+				Type: "Value",
+				Rules: []RuleMatch{
+					{
+						Type:  "String",
+						Rules: nil,
+						Tokens: []Token{
+							{
+								Type:  "TOKEN_STRING",
+								Value: `"jef"`,
+								Line:  3,
+								Col:   11,
+							},
+						},
+					},
+				},
+				Tokens: nil,
+			},
+		},
+		Tokens: nil,
+	}, *nameKeyPair)
 
 	// test query methods
 	// improve error messages
