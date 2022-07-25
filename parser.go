@@ -13,6 +13,24 @@ type RuleDef struct {
 	Check func([]Token) (*RuleMatch, []Token) // returns (matched tokens, remaining tokens)
 }
 
+func (r *RuleMatch) GetNodesWithType(typeName string) []*RuleMatch {
+	nodes := []*RuleMatch{}
+	for index := range r.Rules {
+		if r.Rules[index].Type == typeName {
+			nodes = append(nodes, &r.Rules[index])
+		}
+	}
+	return nodes
+}
+
+func (r *RuleMatch) GetNodeWithType(typeName string) *RuleMatch {
+	nodes := r.GetNodesWithType(typeName)
+	if len(nodes) > 0 {
+		return nodes[0]
+	}
+	return nil
+}
+
 func RuleTokenType(ruleType string, tokenType string) *RuleDef {
 	return &RuleDef{
 		Type: ruleType,

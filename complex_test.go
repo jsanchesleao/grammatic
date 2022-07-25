@@ -92,7 +92,9 @@ func TestCompleteParse(t *testing.T) {
 		t.Fatal(errMatch)
 	}
 
-	fmt.Printf("%+v\n", match)
+	//fmt.Printf("%+v\n\n", match)
+
+	fmt.Printf("%+v\n\n", match.GetNodeWithType("Value").GetNodeWithType("Object"))
 
 	// test query methods
 	// improve error messages
