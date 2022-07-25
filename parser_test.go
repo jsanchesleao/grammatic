@@ -6,6 +6,7 @@ var int_token = Token{Type: "TOKEN_INT", Value: "1", Line: 1, Col: 1}
 var keyword_token = Token{Type: "TOKEN_KEYWORD", Value: "test", Line: 1, Col: 1}
 var string_token = Token{Type: "TOKEN_STRING", Value: "text", Line: 1, Col: 1}
 var space_token = Token{Type: "TOKEN_SPACE", Value: "text", Line: 1, Col: 1}
+var comma_token = Token{Type: "TOKEN_COMMA", Value: ",", Line: 1, Col: 1}
 var eof_token = Token{Type: "TOKEN_EOF", Value: "1", Line: 1, Col: 1}
 
 func TestSimpleRuleMatch(t *testing.T) {
@@ -231,6 +232,57 @@ func TestMany(t *testing.T) {
 
 	AssertRuleMatchEquals(t, RuleMatch{
 		Type:   "MultipleInts",
+		Rules:  nil,
+		Tokens: nil,
+	}, *matchFail)
+}
+
+func TestManyWithSeparator(t *testing.T) {
+	rule := ManyWithSeparator("MultipleIntsWithSeparator",
+		RuleTokenType("CommaRule", "TOKEN_COMMA"),
+		RuleTokenType("IntRule", "TOKEN_INT"))
+
+	tokensSuccess := []Token{int_token, comma_token, int_token, eof_token}
+	tokensFail := []Token{keyword_token, keyword_token, eof_token}
+
+	match, remaining := rule.Check(tokensSuccess)
+	matchFail, remainingFail := rule.Check(tokensFail)
+
+	if match == nil {
+		t.Fatalf("Rule %q should have matched three tokens, but match was nil", rule.Type)
+	}
+
+	if matchFail == nil {
+		t.Fatalf("Rule %q should have matched a non nil value, with empty rules, but was nil", rule.Type)
+	}
+
+	AssertTokenList(t, []Token{eof_token}, remaining)
+	AssertTokenList(t, tokensFail, remainingFail)
+
+	AssertRuleMatchEquals(t, RuleMatch{
+		Type: "MultipleIntsWithSeparator",
+		Rules: []RuleMatch{
+			{
+				Type:   "IntRule",
+				Rules:  nil,
+				Tokens: []Token{int_token},
+			},
+			{
+				Type:   "CommaRule",
+				Rules:  nil,
+				Tokens: []Token{comma_token},
+			},
+			{
+				Type:   "IntRule",
+				Rules:  nil,
+				Tokens: []Token{int_token},
+			},
+		},
+		Tokens: nil,
+	}, *match)
+
+	AssertRuleMatchEquals(t, RuleMatch{
+		Type:   "MultipleIntsWithSeparator",
 		Rules:  nil,
 		Tokens: nil,
 	}, *matchFail)

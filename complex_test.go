@@ -35,40 +35,16 @@ func buildJsonRule() *RuleDef {
 	ruleColon := RuleTokenType("Colon", "TOKEN_COLON")
 	ruleComma := RuleTokenType("Comma", "TOKEN_COMMA")
 
-	ruleArrayBody := Seq("ArrayBody",
-		&ruleValue,
-		Many("ArrayBodyTail",
-			Seq("ArrayBodyTailItem", ruleComma, &ruleValue)))
+	ruleArrayBody := ManyWithSeparator("ArrayBody", ruleComma, &ruleValue)
+	ruleArray := Seq("Array", ruleOpenBrackets, ruleArrayBody, ruleCloseBrackets)
 
-	ruleArray := Seq("Array",
-		ruleOpenBrackets,
-		OneOrNone("MaybeArrayBody", ruleArrayBody),
-		ruleCloseBrackets)
+	ruleObjectKeyValue := Seq("ObjectKeyValuePair", ruleString, ruleColon, &ruleValue)
+	ruleObjectBody := ManyWithSeparator("ObjectBody", ruleComma, ruleObjectKeyValue)
+	ruleObject := Seq("Object", ruleOpenBraces, ruleObjectBody, ruleCloseBraces)
 
-	ruleObjectKeyValue := Seq("ObjectKeyValuePair",
-		ruleString,
-		ruleColon,
-		&ruleValue)
+	ruleValue = *Or("Value", ruleNumber, ruleBoolean, ruleString, ruleArray, ruleObject)
 
-	ruleObjectBody := Seq("ObjectBody",
-		ruleObjectKeyValue,
-		Many("ObjectBodyTail",
-			Seq("ObjectBodyTailItem", ruleComma, ruleObjectKeyValue)))
-
-	ruleObject := Seq("Object",
-		ruleOpenBraces,
-		OneOrNone("MaybeObjectBody", ruleObjectBody),
-		ruleCloseBraces)
-
-	ruleValue = *Or("Value",
-		ruleNumber,
-		ruleBoolean,
-		ruleString,
-		ruleArray,
-		ruleObject)
-
-	ruleJson := Seq("JSON", &ruleValue, RuleTokenType("Eof", "TOKEN_EOF"))
-	return ruleJson
+	return Seq("JSON", &ruleValue, RuleTokenType("Eof", "TOKEN_EOF"))
 }
 
 func TestCompleteParse(t *testing.T) {

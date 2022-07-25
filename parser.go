@@ -117,6 +117,40 @@ func Many(ruleType string, rule *RuleDef) *RuleDef {
 	}
 }
 
+func ManyWithSeparator(ruleType string, separator, rule *RuleDef) *RuleDef {
+	return &RuleDef{
+		Type: ruleType,
+		Check: func(tokens []Token) (*RuleMatch, []Token) {
+			remainingTokens := tokens
+			matches := []RuleMatch{}
+			done := false
+			var separatorMatch *RuleMatch = nil
+			for !done {
+				ruleToTest := rule
+				if separatorMatch == nil && len(matches) > 0 {
+					ruleToTest = separator
+				}
+				match, rest := ruleToTest.Check(remainingTokens)
+				if match != nil {
+					remainingTokens = rest
+					if ruleToTest.Type == separator.Type {
+						separatorMatch = match
+					} else if separatorMatch != nil {
+						matches = append(matches, *separatorMatch)
+						matches = append(matches, *match)
+						separatorMatch = nil
+					} else {
+						matches = append(matches, *match)
+					}
+				} else {
+					done = true
+				}
+			}
+			return &RuleMatch{Type: ruleType, Tokens: nil, Rules: matches}, remainingTokens
+		},
+	}
+}
+
 func OneOrMany(ruleType string, rule *RuleDef) *RuleDef {
 	return &RuleDef{
 		Type: ruleType,
