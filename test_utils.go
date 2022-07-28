@@ -20,14 +20,22 @@ func AssertTokenList(t *testing.T, expected, actual []Token) {
 	}
 }
 
-func AssertRuleMatchEquals(t *testing.T, expected, actual RuleMatch) {
+func AssertRuleMatchEquals(t *testing.T, expected, actual Node) {
 	t.Helper()
 
 	if expected.Type != actual.Type {
 		t.Fatalf("Expected a matching rule of type %q buf got %q", expected.Type, actual.Type)
 	}
 
-	AssertTokenList(t, expected.Tokens, actual.Tokens)
+	if actual.Token == nil {
+		if expected.Token != nil {
+			t.Fatalf("Expected token %s, but got nil", expected.Type)
+		}
+	} else {
+		if expected.Token != nil {
+			AssertTokenEquals(t, *expected.Token, *actual.Token)
+		}
+	}
 
 	if len(expected.Rules) != len(actual.Rules) {
 		t.Fatalf("Expected to found %d matched subrules, but found %d", len(expected.Rules), len(actual.Rules))

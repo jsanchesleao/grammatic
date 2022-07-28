@@ -22,7 +22,7 @@ func TestSimpleRuleMatch(t *testing.T) {
 		t.Fatalf("Should have matched 0 sub rules, but matched %d", len(result.Match.Rules))
 	}
 
-	AssertTokenList(t, tokens[:1], result.Match.Tokens)
+	AssertTokenEquals(t, tokens[0], *result.Match.Token)
 	AssertTokenList(t, tokens[1:], result.RemainingTokens)
 }
 
@@ -51,7 +51,7 @@ func TestSimpleRuleWithValueMatch(t *testing.T) {
 		t.Fatalf("Should have matched 0 sub rules, but matched %d", len(result.Match.Rules))
 	}
 
-	AssertTokenList(t, tokens[:1], result.Match.Tokens)
+	AssertTokenEquals(t, tokens[0], *result.Match.Token)
 	AssertTokenList(t, tokens[1:], result.RemainingTokens)
 }
 
@@ -89,27 +89,27 @@ func TestOr(t *testing.T) {
 		t.Fatalf("Rule %q should not have matched a TOKEN_STRING token.\n %+v", rule.Type, stringResult.Match)
 	}
 
-	AssertRuleMatchEquals(t, RuleMatch{
+	AssertRuleMatchEquals(t, Node{
 		Type: "KeywordOrIntRule",
-		Rules: []RuleMatch{
+		Rules: []Node{
 			{
-				Type:   "IntRule",
-				Rules:  nil,
-				Tokens: []Token{int_token},
+				Type:  "IntRule",
+				Rules: nil,
+				Token: &int_token,
 			},
 		},
-		Tokens: nil,
+		Token: nil,
 	}, *intResult.Match)
-	AssertRuleMatchEquals(t, RuleMatch{
+	AssertRuleMatchEquals(t, Node{
 		Type: "KeywordOrIntRule",
-		Rules: []RuleMatch{
+		Rules: []Node{
 			{
-				Type:   "KeywordRule",
-				Rules:  nil,
-				Tokens: []Token{keyword_token},
+				Type:  "KeywordRule",
+				Rules: nil,
+				Token: &keyword_token,
 			},
 		},
-		Tokens: nil,
+		Token: nil,
 	}, *keywordResult.Match)
 	AssertTokenList(t, []Token{eof_token}, intResult.RemainingTokens)
 	AssertTokenList(t, []Token{eof_token}, keywordResult.RemainingTokens)
@@ -137,21 +137,21 @@ func TestSeq(t *testing.T) {
 
 	AssertTokenList(t, []Token{eof_token}, result.RemainingTokens)
 	AssertTokenList(t, tokensFail, failResult.RemainingTokens)
-	AssertRuleMatchEquals(t, RuleMatch{
+	AssertRuleMatchEquals(t, Node{
 		Type: "IntThenKeyword",
-		Rules: []RuleMatch{
+		Rules: []Node{
 			{
-				Type:   "IntRule",
-				Rules:  nil,
-				Tokens: []Token{int_token},
+				Type:  "IntRule",
+				Rules: nil,
+				Token: &int_token,
 			},
 			{
-				Type:   "KeywordRule",
-				Rules:  nil,
-				Tokens: []Token{keyword_token},
+				Type:  "KeywordRule",
+				Rules: nil,
+				Token: &keyword_token,
 			},
 		},
-		Tokens: nil,
+		Token: nil,
 	}, *result.Match)
 
 }
@@ -177,27 +177,27 @@ func TestComplexSeqAndOr(t *testing.T) {
 
 	AssertTokenList(t, []Token{eof_token}, result.RemainingTokens)
 	AssertTokenList(t, tokensFail, failResult.RemainingTokens)
-	AssertRuleMatchEquals(t, RuleMatch{
+	AssertRuleMatchEquals(t, Node{
 		Type: "IntThenKeyword",
-		Rules: []RuleMatch{
+		Rules: []Node{
 			{
 				Type: "IntOrKeyword",
-				Rules: []RuleMatch{
+				Rules: []Node{
 					{
-						Type:   "IntRule",
-						Rules:  nil,
-						Tokens: []Token{int_token},
+						Type:  "IntRule",
+						Rules: nil,
+						Token: &int_token,
 					},
 				},
-				Tokens: nil,
+				Token: nil,
 			},
 			{
-				Type:   "KeywordRule",
-				Rules:  nil,
-				Tokens: []Token{keyword_token},
+				Type:  "KeywordRule",
+				Rules: nil,
+				Token: &keyword_token,
 			},
 		},
-		Tokens: nil,
+		Token: nil,
 	}, *result.Match)
 
 }
@@ -217,22 +217,22 @@ func TestOneOrNone(t *testing.T) {
 	if failResult.Match == nil {
 		t.Fatalf("Rule %q should never return nil, but it did when it should match zero tokens", rule.Type)
 	}
-	AssertRuleMatchEquals(t, RuleMatch{
+	AssertRuleMatchEquals(t, Node{
 		Type: "MaybeInt",
-		Rules: []RuleMatch{
+		Rules: []Node{
 			{
-				Type:   "IntRule",
-				Rules:  nil,
-				Tokens: []Token{int_token},
+				Type:  "IntRule",
+				Rules: nil,
+				Token: &int_token,
 			},
 		},
-		Tokens: nil,
+		Token: nil,
 	}, *result.Match)
 
-	AssertRuleMatchEquals(t, RuleMatch{
-		Type:   "MaybeInt",
-		Rules:  []RuleMatch{},
-		Tokens: nil,
+	AssertRuleMatchEquals(t, Node{
+		Type:  "MaybeInt",
+		Rules: []Node{},
+		Token: nil,
 	}, *failResult.Match)
 
 	AssertTokenList(t, []Token{eof_token}, result.RemainingTokens)
@@ -259,27 +259,27 @@ func TestMany(t *testing.T) {
 	AssertTokenList(t, []Token{eof_token}, result.RemainingTokens)
 	AssertTokenList(t, tokensFail, failResult.RemainingTokens)
 
-	AssertRuleMatchEquals(t, RuleMatch{
+	AssertRuleMatchEquals(t, Node{
 		Type: "MultipleInts",
-		Rules: []RuleMatch{
+		Rules: []Node{
 			{
-				Type:   "IntRule",
-				Rules:  nil,
-				Tokens: []Token{int_token},
+				Type:  "IntRule",
+				Rules: nil,
+				Token: &int_token,
 			},
 			{
-				Type:   "IntRule",
-				Rules:  nil,
-				Tokens: []Token{int_token},
+				Type:  "IntRule",
+				Rules: nil,
+				Token: &int_token,
 			},
 		},
-		Tokens: nil,
+		Token: nil,
 	}, *result.Match)
 
-	AssertRuleMatchEquals(t, RuleMatch{
-		Type:   "MultipleInts",
-		Rules:  nil,
-		Tokens: nil,
+	AssertRuleMatchEquals(t, Node{
+		Type:  "MultipleInts",
+		Rules: nil,
+		Token: nil,
 	}, *failResult.Match)
 }
 
@@ -305,32 +305,32 @@ func TestManyWithSeparator(t *testing.T) {
 	AssertTokenList(t, []Token{eof_token}, result.RemainingTokens)
 	AssertTokenList(t, tokensFail, resultFail.RemainingTokens)
 
-	AssertRuleMatchEquals(t, RuleMatch{
+	AssertRuleMatchEquals(t, Node{
 		Type: "MultipleIntsWithSeparator",
-		Rules: []RuleMatch{
+		Rules: []Node{
 			{
-				Type:   "IntRule",
-				Rules:  nil,
-				Tokens: []Token{int_token},
+				Type:  "IntRule",
+				Rules: nil,
+				Token: &int_token,
 			},
 			{
-				Type:   "CommaRule",
-				Rules:  nil,
-				Tokens: []Token{comma_token},
+				Type:  "CommaRule",
+				Rules: nil,
+				Token: &comma_token,
 			},
 			{
-				Type:   "IntRule",
-				Rules:  nil,
-				Tokens: []Token{int_token},
+				Type:  "IntRule",
+				Rules: nil,
+				Token: &int_token,
 			},
 		},
-		Tokens: nil,
+		Token: nil,
 	}, *result.Match)
 
-	AssertRuleMatchEquals(t, RuleMatch{
-		Type:   "MultipleIntsWithSeparator",
-		Rules:  nil,
-		Tokens: nil,
+	AssertRuleMatchEquals(t, Node{
+		Type:  "MultipleIntsWithSeparator",
+		Rules: nil,
+		Token: nil,
 	}, *resultFail.Match)
 }
 
@@ -353,20 +353,20 @@ func TestOneOrMany(t *testing.T) {
 	AssertTokenList(t, []Token{eof_token}, result.RemainingTokens)
 	AssertTokenList(t, tokensFail, failResult.RemainingTokens)
 
-	AssertRuleMatchEquals(t, RuleMatch{
+	AssertRuleMatchEquals(t, Node{
 		Type: "MultipleIntsAtLeastOne",
-		Rules: []RuleMatch{
+		Rules: []Node{
 			{
-				Type:   "IntRule",
-				Rules:  nil,
-				Tokens: []Token{int_token},
+				Type:  "IntRule",
+				Rules: nil,
+				Token: &int_token,
 			},
 			{
-				Type:   "IntRule",
-				Rules:  nil,
-				Tokens: []Token{int_token},
+				Type:  "IntRule",
+				Rules: nil,
+				Token: &int_token,
 			},
 		},
-		Tokens: nil,
+		Token: nil,
 	}, *result.Match)
 }

@@ -5,21 +5,21 @@ import (
 	"strings"
 )
 
-type RuleMatch struct {
-	Type   string
-	Tokens []Token
-	Rules  []RuleMatch
+type Node struct {
+	Type  string
+	Token *Token
+	Rules []Node
 }
 
-type RuleMatchError struct {
+type RuleDefError struct {
 	RuleType string
 	Token    Token
 }
 
 type RuleDefResult struct {
-	Match           *RuleMatch
+	Match           *Node
 	RemainingTokens []Token
-	Error           *RuleMatchError
+	Error           *RuleDefError
 }
 
 type RuleDef struct {
@@ -27,8 +27,8 @@ type RuleDef struct {
 	Check func([]Token) RuleDefResult
 }
 
-func (r *RuleMatch) GetNodesWithType(typeName string) []*RuleMatch {
-	nodes := []*RuleMatch{}
+func (r *Node) GetNodesWithType(typeName string) []*Node {
+	nodes := []*Node{}
 	for index := range r.Rules {
 		if r.Rules[index].Type == typeName {
 			nodes = append(nodes, &r.Rules[index])
@@ -37,7 +37,7 @@ func (r *RuleMatch) GetNodesWithType(typeName string) []*RuleMatch {
 	return nodes
 }
 
-func (r *RuleMatch) GetNodeWithType(typeName string) *RuleMatch {
+func (r *Node) GetNodeWithType(typeName string) *Node {
 	nodes := r.GetNodesWithType(typeName)
 	if len(nodes) > 0 {
 		return nodes[0]
@@ -53,7 +53,7 @@ func RuleTokenType(ruleType string, tokenType string) *RuleDef {
 				return RuleDefResult{Match: nil, RemainingTokens: tokens, Error: nil}
 			} else if tokens[0].Type == tokenType {
 				return RuleDefResult{
-					Match:           &RuleMatch{Type: ruleType, Tokens: tokens[0:1], Rules: nil},
+					Match:           &Node{Type: ruleType, Token: &tokens[0], Rules: nil},
 					RemainingTokens: tokens[1:],
 					Error:           nil,
 				}
@@ -61,7 +61,7 @@ func RuleTokenType(ruleType string, tokenType string) *RuleDef {
 				return RuleDefResult{
 					Match:           nil,
 					RemainingTokens: tokens,
-					Error: &RuleMatchError{
+					Error: &RuleDefError{
 						RuleType: ruleType,
 						Token:    tokens[0],
 					},
@@ -79,7 +79,7 @@ func RuleTokenTypeAndValue(ruleType, tokenType, value string) *RuleDef {
 				return RuleDefResult{Match: nil, RemainingTokens: tokens, Error: nil}
 			} else if tokens[0].Type == tokenType && tokens[0].Value == value {
 				return RuleDefResult{
-					Match:           &RuleMatch{Type: ruleType, Tokens: tokens[0:1], Rules: nil},
+					Match:           &Node{Type: ruleType, Token: &tokens[0], Rules: nil},
 					RemainingTokens: tokens[1:],
 					Error:           nil,
 				}
@@ -87,7 +87,7 @@ func RuleTokenTypeAndValue(ruleType, tokenType, value string) *RuleDef {
 				return RuleDefResult{
 					Match:           nil,
 					RemainingTokens: tokens,
-					Error: &RuleMatchError{
+					Error: &RuleDefError{
 						RuleType: ruleType,
 						Token:    tokens[0],
 					},
@@ -101,12 +101,12 @@ func Or(ruleType string, rules ...*RuleDef) *RuleDef {
 	return &RuleDef{
 		Type: ruleType,
 		Check: func(tokens []Token) RuleDefResult {
-			var error *RuleMatchError = nil
+			var error *RuleDefError = nil
 			for _, rule := range rules {
 				result := rule.Check(tokens)
 				if result.Error == nil && result.Match != nil {
 					return RuleDefResult{
-						Match:           &RuleMatch{Type: ruleType, Tokens: nil, Rules: []RuleMatch{*result.Match}},
+						Match:           &Node{Type: ruleType, Token: nil, Rules: []Node{*result.Match}},
 						RemainingTokens: result.RemainingTokens,
 						Error:           nil,
 					}
@@ -124,7 +124,7 @@ func Seq(ruleType string, rules ...*RuleDef) *RuleDef {
 		Type: ruleType,
 		Check: func(tokens []Token) RuleDefResult {
 			remainingTokens := tokens
-			matches := []RuleMatch{}
+			matches := []Node{}
 			for _, rule := range rules {
 				result := rule.Check(remainingTokens)
 				if result.Error == nil {
@@ -140,7 +140,7 @@ func Seq(ruleType string, rules ...*RuleDef) *RuleDef {
 			}
 
 			returnValue := RuleDefResult{
-				Match:           &RuleMatch{Type: ruleType, Tokens: nil, Rules: matches},
+				Match:           &Node{Type: ruleType, Token: nil, Rules: matches},
 				RemainingTokens: remainingTokens,
 				Error:           nil,
 			}
@@ -154,7 +154,7 @@ func Many(ruleType string, rule *RuleDef) *RuleDef {
 		Type: ruleType,
 		Check: func(tokens []Token) RuleDefResult {
 			remainingTokens := tokens
-			matches := []RuleMatch{}
+			matches := []Node{}
 			done := false
 			for !done {
 				result := rule.Check(remainingTokens)
@@ -166,7 +166,7 @@ func Many(ruleType string, rule *RuleDef) *RuleDef {
 				}
 			}
 			return RuleDefResult{
-				Match:           &RuleMatch{Type: ruleType, Tokens: nil, Rules: matches},
+				Match:           &Node{Type: ruleType, Token: nil, Rules: matches},
 				RemainingTokens: remainingTokens,
 				Error:           nil,
 			}
@@ -178,15 +178,15 @@ func ManyWithSeparator(ruleType string, separator, rule *RuleDef) *RuleDef {
 	return &RuleDef{
 		Type: ruleType,
 		Check: func(tokens []Token) RuleDefResult {
-			var error *RuleMatchError = nil
+			var error *RuleDefError = nil
 			remainingTokens := tokens
-			match := &RuleMatch{
-				Type:   ruleType,
-				Tokens: nil,
-				Rules:  []RuleMatch{},
+			match := &Node{
+				Type:  ruleType,
+				Token: nil,
+				Rules: []Node{},
 			}
 			done := false
-			var separatorMatch *RuleMatch = nil
+			var separatorMatch *Node = nil
 			for !done {
 				ruleToTest := rule
 				if separatorMatch == nil && len(match.Rules) > 0 {
@@ -228,7 +228,7 @@ func OneOrMany(ruleType string, rule *RuleDef) *RuleDef {
 		Type: ruleType,
 		Check: func(tokens []Token) RuleDefResult {
 			remainingTokens := tokens
-			matches := []RuleMatch{}
+			matches := []Node{}
 			done := false
 			for !done {
 				result := rule.Check(remainingTokens)
@@ -242,7 +242,7 @@ func OneOrMany(ruleType string, rule *RuleDef) *RuleDef {
 				}
 			}
 			return RuleDefResult{
-				Match:           &RuleMatch{Type: ruleType, Tokens: nil, Rules: matches},
+				Match:           &Node{Type: ruleType, Token: nil, Rules: matches},
 				RemainingTokens: remainingTokens,
 				Error:           nil,
 			}
@@ -254,7 +254,7 @@ func OneOrNone(ruleType string, rule *RuleDef) *RuleDef {
 	return &RuleDef{
 		Type: ruleType,
 		Check: func(tokens []Token) RuleDefResult {
-			match := RuleMatch{Type: ruleType, Rules: []RuleMatch{}, Tokens: nil}
+			match := Node{Type: ruleType, Rules: []Node{}, Token: nil}
 			result := rule.Check(tokens)
 			if result.Match != nil {
 				match.Rules = append(match.Rules, *result.Match)
@@ -277,7 +277,7 @@ func shouldIgnore(ignoredTypes []string, token *Token) bool {
 	return false
 }
 
-func (m *RuleMatch) format(indentation string, firstChild, lastChild bool) string {
+func (m *Node) format(indentation string, firstChild, lastChild bool) string {
 	heading := "├─"
 
 	if indentation == "" {
@@ -293,23 +293,12 @@ func (m *RuleMatch) format(indentation string, firstChild, lastChild bool) strin
 		indentationAppend = "│ "
 	}
 
-	if m.Tokens != nil {
-		output += fmt.Sprintf(" %s\n", formatTokens(m.Tokens))
+	if m.Token != nil {
+		output += fmt.Sprintf(" • %s\n", formatString(m.Token.Value))
 	} else if m.Rules != nil {
 		output += "\n"
 		for i, rule := range m.Rules {
 			output += rule.format(indentation+indentationAppend, i == 0, i == len(m.Rules)-1)
-		}
-	}
-	return output
-}
-
-func formatTokens(tokens []Token) string {
-	output := ""
-	for i, t := range tokens {
-		output += "• " + formatString(t.Value)
-		if i < (len(tokens) - 1) {
-			output += ", "
 		}
 	}
 	return output
@@ -320,15 +309,15 @@ func formatString(text string) string {
 	return strings.ReplaceAll(noBackslashes, "\n", "\\n")
 }
 
-func (m *RuleMatch) PrettyPrint() string {
+func (m *Node) PrettyPrint() string {
 	return fmt.Sprintln(m.format("", true, true))
 }
 
-func (e *RuleMatchError) GetError() error {
+func (e *RuleDefError) GetError() error {
 	return fmt.Errorf("Unexpected token %q at line %d, column %d", e.Token.Value, e.Token.Line, e.Token.Col)
 }
 
-func ParseRule(rule RuleDef, ignoredTokenNames []string, tokens []Token) (*RuleMatch, error) {
+func ParseRule(rule RuleDef, ignoredTokenNames []string, tokens []Token) (*Node, error) {
 	validTokens := []Token{}
 	for _, token := range tokens {
 		if !shouldIgnore(ignoredTokenNames, &token) {
@@ -343,7 +332,7 @@ func ParseRule(rule RuleDef, ignoredTokenNames []string, tokens []Token) (*RuleM
 	}
 
 	if len(result.RemainingTokens) != 0 {
-		err := RuleMatchError{
+		err := RuleDefError{
 			Token:    result.RemainingTokens[0],
 			RuleType: rule.Type,
 		}
