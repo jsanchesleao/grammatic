@@ -11,60 +11,60 @@ var eof_token = Token{Type: "TOKEN_EOF", Value: "1", Line: 1, Col: 1}
 func TestSimpleRuleMatch(t *testing.T) {
 	rule := RuleTokenType("TestRule", "TOKEN_KEYWORD")
 	var tokens = []Token{keyword_token, eof_token}
-	match, remaining := rule.Check(tokens)
+	result := rule.Check(tokens)
 
-	if match == nil {
+	if result.Match == nil {
 		t.Fatal("Should have a match, but found none")
 	}
 
-	if len(match.Rules) != 0 {
-		t.Fatalf("Should have matched 0 sub rules, but matched %d", len(match.Rules))
+	if len(result.Match.Rules) != 0 {
+		t.Fatalf("Should have matched 0 sub rules, but matched %d", len(result.Match.Rules))
 	}
 
-	AssertTokenList(t, tokens[:1], match.Tokens)
-	AssertTokenList(t, tokens[1:], remaining)
+	AssertTokenList(t, tokens[:1], result.Match.Tokens)
+	AssertTokenList(t, tokens[1:], result.RemainingTokens)
 }
 
 func TestSimpleRuleFail(t *testing.T) {
 	rule := RuleTokenType("TestRule", "TOKEN_STRING")
 	var tokens = []Token{keyword_token, eof_token}
-	match, remaining := rule.Check(tokens)
+	result := rule.Check(tokens)
 
-	if match != nil {
-		t.Fatalf("Should not have a match, but found %+v", match)
+	if result.Match != nil {
+		t.Fatalf("Should not have a match, but found %+v", result.Match)
 	}
 
-	AssertTokenList(t, tokens, remaining)
+	AssertTokenList(t, tokens, result.RemainingTokens)
 }
 
 func TestSimpleRuleWithValueMatch(t *testing.T) {
 	rule := RuleTokenTypeAndValue("TestRule", "TOKEN_KEYWORD", "test")
 	var tokens = []Token{keyword_token, eof_token}
-	match, remaining := rule.Check(tokens)
+	result := rule.Check(tokens)
 
-	if match == nil {
+	if result.Match == nil {
 		t.Fatal("Should have a match, but found none")
 	}
 
-	if len(match.Rules) != 0 {
-		t.Fatalf("Should have matched 0 sub rules, but matched %d", len(match.Rules))
+	if len(result.Match.Rules) != 0 {
+		t.Fatalf("Should have matched 0 sub rules, but matched %d", len(result.Match.Rules))
 	}
 
-	AssertTokenList(t, tokens[:1], match.Tokens)
-	AssertTokenList(t, tokens[1:], remaining)
+	AssertTokenList(t, tokens[:1], result.Match.Tokens)
+	AssertTokenList(t, tokens[1:], result.RemainingTokens)
 }
 
 func TestSimpleRuleWithValueFail(t *testing.T) {
 	rule := RuleTokenTypeAndValue("TestRule", "TOKEN_KEYWORD", "fail")
 	var tokens = []Token{keyword_token, eof_token}
 
-	match, remaining := rule.Check(tokens)
+	result := rule.Check(tokens)
 
-	if match != nil {
-		t.Fatalf("Should not have a match, but found %+v", match)
+	if result.Match != nil {
+		t.Fatalf("Should not have a match, but found %+v", result.Match)
 	}
 
-	AssertTokenList(t, tokens, remaining)
+	AssertTokenList(t, tokens, result.RemainingTokens)
 }
 
 func TestOr(t *testing.T) {
@@ -76,16 +76,16 @@ func TestOr(t *testing.T) {
 	tokensWithKeyword := []Token{keyword_token, eof_token}
 	tokensWithString := []Token{string_token, eof_token}
 
-	intMatch, remainingInt := rule.Check(tokensWithInt)
-	keywordMatch, remainingKeyword := rule.Check(tokensWithKeyword)
-	stringMatch, remainingString := rule.Check(tokensWithString)
+	intResult := rule.Check(tokensWithInt)
+	keywordResult := rule.Check(tokensWithKeyword)
+	stringResult := rule.Check(tokensWithString)
 
-	if intMatch == nil || keywordMatch == nil {
+	if intResult.Match == nil || keywordResult.Match == nil {
 		t.Fatalf("Rule %q should have matched a token in both Int and Keyword types", rule.Type)
 	}
 
-	if stringMatch != nil {
-		t.Fatalf("Rule %q should not have matched a TOKEN_STRING token.\n %+v", rule.Type, stringMatch)
+	if stringResult.Match != nil {
+		t.Fatalf("Rule %q should not have matched a TOKEN_STRING token.\n %+v", rule.Type, stringResult.Match)
 	}
 
 	AssertRuleMatchEquals(t, RuleMatch{
@@ -98,7 +98,7 @@ func TestOr(t *testing.T) {
 			},
 		},
 		Tokens: nil,
-	}, *intMatch)
+	}, *intResult.Match)
 	AssertRuleMatchEquals(t, RuleMatch{
 		Type: "KeywordOrIntRule",
 		Rules: []RuleMatch{
@@ -109,10 +109,10 @@ func TestOr(t *testing.T) {
 			},
 		},
 		Tokens: nil,
-	}, *keywordMatch)
-	AssertTokenList(t, []Token{eof_token}, remainingInt)
-	AssertTokenList(t, []Token{eof_token}, remainingKeyword)
-	AssertTokenList(t, tokensWithString, remainingString)
+	}, *keywordResult.Match)
+	AssertTokenList(t, []Token{eof_token}, intResult.RemainingTokens)
+	AssertTokenList(t, []Token{eof_token}, keywordResult.RemainingTokens)
+	AssertTokenList(t, tokensWithString, stringResult.RemainingTokens)
 }
 
 func TestSeq(t *testing.T) {
@@ -123,19 +123,19 @@ func TestSeq(t *testing.T) {
 		RuleTokenType("IntRule", "TOKEN_INT"),
 		RuleTokenType("KeywordRule", "TOKEN_KEYWORD"))
 
-	match, remaining := rule.Check(tokensSuccess)
-	matchFail, remainingFail := rule.Check(tokensFail)
+	result := rule.Check(tokensSuccess)
+	failResult := rule.Check(tokensFail)
 
-	if match == nil {
+	if result.Match == nil {
 		t.Fatalf("Rule %q should have matched two tokens, but match was nil", rule.Type)
 	}
 
-	if matchFail != nil {
-		t.Fatalf("Rule %q should have not matched the tokensFail sequence, but it did.\n%+v", rule.Type, matchFail)
+	if failResult.Match != nil {
+		t.Fatalf("Rule %q should have not matched the tokensFail sequence, but it did.\n%+v", rule.Type, failResult.Match)
 	}
 
-	AssertTokenList(t, []Token{eof_token}, remaining)
-	AssertTokenList(t, tokensFail, remainingFail)
+	AssertTokenList(t, []Token{eof_token}, result.RemainingTokens)
+	AssertTokenList(t, tokensFail, failResult.RemainingTokens)
 	AssertRuleMatchEquals(t, RuleMatch{
 		Type: "IntThenKeyword",
 		Rules: []RuleMatch{
@@ -151,7 +151,53 @@ func TestSeq(t *testing.T) {
 			},
 		},
 		Tokens: nil,
-	}, *match)
+	}, *result.Match)
+
+}
+
+func TestComplexSeqAndOr(t *testing.T) {
+	tokensSuccess := []Token{int_token, keyword_token, eof_token}
+	tokensFail := []Token{int_token, string_token, eof_token}
+
+	rule := Seq("IntThenKeyword",
+		Or("IntOrKeyword", RuleTokenType("IntRule", "TOKEN_INT"), RuleTokenType("KeywordRule", "TOKEN_KEYWORD")),
+		RuleTokenType("KeywordRule", "TOKEN_KEYWORD"))
+
+	result := rule.Check(tokensSuccess)
+	failResult := rule.Check(tokensFail)
+
+	if result.Match == nil {
+		t.Fatalf("Rule %q should have matched two tokens, but match was nil", rule.Type)
+	}
+
+	if failResult.Match != nil {
+		t.Fatalf("Rule %q should have not matched the tokensFail sequence, but it did.\n%+v", rule.Type, failResult.Match)
+	}
+
+	AssertTokenList(t, []Token{eof_token}, result.RemainingTokens)
+	AssertTokenList(t, tokensFail, failResult.RemainingTokens)
+	AssertRuleMatchEquals(t, RuleMatch{
+		Type: "IntThenKeyword",
+		Rules: []RuleMatch{
+			{
+				Type: "IntOrKeyword",
+				Rules: []RuleMatch{
+					{
+						Type:   "IntRule",
+						Rules:  nil,
+						Tokens: []Token{int_token},
+					},
+				},
+				Tokens: nil,
+			},
+			{
+				Type:   "KeywordRule",
+				Rules:  nil,
+				Tokens: []Token{keyword_token},
+			},
+		},
+		Tokens: nil,
+	}, *result.Match)
 
 }
 
@@ -161,13 +207,13 @@ func TestOneOrNone(t *testing.T) {
 	tokensSuccess := []Token{int_token, eof_token}
 	tokensFail := []Token{string_token, eof_token}
 
-	match, remaining := rule.Check(tokensSuccess)
-	matchFail, remainingFail := rule.Check(tokensFail)
+	result := rule.Check(tokensSuccess)
+	failResult := rule.Check(tokensFail)
 
-	if match == nil {
+	if result.Match == nil {
 		t.Fatalf("Rule %q should never return nil, but it did when it should match one token", rule.Type)
 	}
-	if matchFail == nil {
+	if failResult.Match == nil {
 		t.Fatalf("Rule %q should never return nil, but it did when it should match zero tokens", rule.Type)
 	}
 	AssertRuleMatchEquals(t, RuleMatch{
@@ -180,16 +226,16 @@ func TestOneOrNone(t *testing.T) {
 			},
 		},
 		Tokens: nil,
-	}, *match)
+	}, *result.Match)
 
 	AssertRuleMatchEquals(t, RuleMatch{
 		Type:   "MaybeInt",
 		Rules:  []RuleMatch{},
 		Tokens: nil,
-	}, *matchFail)
+	}, *failResult.Match)
 
-	AssertTokenList(t, []Token{eof_token}, remaining)
-	AssertTokenList(t, tokensFail, remainingFail)
+	AssertTokenList(t, []Token{eof_token}, result.RemainingTokens)
+	AssertTokenList(t, tokensFail, failResult.RemainingTokens)
 
 }
 
@@ -198,19 +244,19 @@ func TestMany(t *testing.T) {
 	tokensSuccess := []Token{int_token, int_token, eof_token}
 	tokensFail := []Token{keyword_token, keyword_token, eof_token}
 
-	match, remaining := rule.Check(tokensSuccess)
-	matchFail, remainingFail := rule.Check(tokensFail)
+	result := rule.Check(tokensSuccess)
+	failResult := rule.Check(tokensFail)
 
-	if match == nil {
+	if result.Match == nil {
 		t.Fatalf("Rule %q should have matched two tokens, but match was nil", rule.Type)
 	}
 
-	if matchFail == nil {
+	if failResult.Match == nil {
 		t.Fatalf("Rule %q should have matched a non nil value, with empty rules, but was nil", rule.Type)
 	}
 
-	AssertTokenList(t, []Token{eof_token}, remaining)
-	AssertTokenList(t, tokensFail, remainingFail)
+	AssertTokenList(t, []Token{eof_token}, result.RemainingTokens)
+	AssertTokenList(t, tokensFail, failResult.RemainingTokens)
 
 	AssertRuleMatchEquals(t, RuleMatch{
 		Type: "MultipleInts",
@@ -227,13 +273,13 @@ func TestMany(t *testing.T) {
 			},
 		},
 		Tokens: nil,
-	}, *match)
+	}, *result.Match)
 
 	AssertRuleMatchEquals(t, RuleMatch{
 		Type:   "MultipleInts",
 		Rules:  nil,
 		Tokens: nil,
-	}, *matchFail)
+	}, *failResult.Match)
 }
 
 func TestOneOrMany(t *testing.T) {
@@ -241,19 +287,19 @@ func TestOneOrMany(t *testing.T) {
 	tokensSuccess := []Token{int_token, int_token, eof_token}
 	tokensFail := []Token{keyword_token, keyword_token, eof_token}
 
-	match, remaining := rule.Check(tokensSuccess)
-	matchFail, remainingFail := rule.Check(tokensFail)
+	result := rule.Check(tokensSuccess)
+	failResult := rule.Check(tokensFail)
 
-	if match == nil {
+	if result.Match == nil {
 		t.Fatalf("Rule %q should have matched two tokens, but match was nil", rule.Type)
 	}
 
-	if matchFail != nil {
-		t.Fatalf("Rule %q should not have matched on tokensFail, but it matched %#v", rule.Type, matchFail)
+	if failResult.Match != nil {
+		t.Fatalf("Rule %q should not have matched on tokensFail, but it matched %#v", rule.Type, failResult.Match)
 	}
 
-	AssertTokenList(t, []Token{eof_token}, remaining)
-	AssertTokenList(t, tokensFail, remainingFail)
+	AssertTokenList(t, []Token{eof_token}, result.RemainingTokens)
+	AssertTokenList(t, tokensFail, failResult.RemainingTokens)
 
 	AssertRuleMatchEquals(t, RuleMatch{
 		Type: "MultipleIntsAtLeastOne",
@@ -270,5 +316,5 @@ func TestOneOrMany(t *testing.T) {
 			},
 		},
 		Tokens: nil,
-	}, *match)
+	}, *result.Match)
 }

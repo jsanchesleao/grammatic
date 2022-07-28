@@ -27,6 +27,16 @@ type Token struct {
 	Col   int
 }
 
+func (t *Token) isAfter(other *Token) bool {
+	if t.Line < other.Line {
+		return false
+	} else if t.Line > other.Line {
+		return true
+	} else {
+		return t.Col > other.Col
+	}
+}
+
 const TYPE_EOF = "TOKEN_EOF"
 
 const DigitsTokenFormat = "^\\d+"
