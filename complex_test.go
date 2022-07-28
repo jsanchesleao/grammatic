@@ -1,6 +1,8 @@
 package grammatic
 
-import "testing"
+import (
+	"testing"
+)
 
 func buildTokenDefs() []TokenDef {
 
@@ -25,7 +27,7 @@ func TestCompleteParse(t *testing.T) {
   "name": "jef",
   "age": 30,
   "isRich": false,
-  "hobbies": []
+  "hobbies": [ "coding", "gaming" ]
 }`
 
 	var ruleValue RuleDef
@@ -47,13 +49,14 @@ func TestCompleteParse(t *testing.T) {
 		ruleObjectEntry,
 	)
 
-	// 	ruleArrayBody := ManyWithSeparator("ArrayBody",
-	// 		ruleComma,
-	// 		&ruleValue,
-	// 	)
+	ruleArrayBody := ManyWithSeparator("ArrayBody",
+		ruleComma,
+		&ruleValue,
+	)
 
 	ruleArray := Seq("Array",
 		RuleTokenType("OpenBracket", "TOKEN_OPEN_BRACKETS"),
+		ruleArrayBody,
 		RuleTokenType("CloseBracket", "TOKEN_CLOSE_BRACKETS"),
 	)
 
@@ -119,6 +122,12 @@ func TestCompleteParse(t *testing.T) {
   │   │   └─Value
   │   │     └─Array
   │   │       ├─OpenBracket • [
+  │   │       ├─ArrayBody
+  │   │       │ ├─Value
+  │   │       │ │ └─String • "coding"
+  │   │       │ ├─Comma • ,
+  │   │       │ └─Value
+  │   │       │   └─String • "gaming"
   │   │       └─CloseBracket • ]
   │   └─CloseBraces • }
   └─EOF • 

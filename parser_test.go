@@ -291,19 +291,19 @@ func TestManyWithSeparator(t *testing.T) {
 	tokensSuccess := []Token{int_token, comma_token, int_token, eof_token}
 	tokensFail := []Token{keyword_token, keyword_token, eof_token}
 
-	match, remaining := rule.Check(tokensSuccess)
-	matchFail, remainingFail := rule.Check(tokensFail)
+	result := rule.Check(tokensSuccess)
+	resultFail := rule.Check(tokensFail)
 
-	if match == nil {
+	if result.Match == nil {
 		t.Fatalf("Rule %q should have matched three tokens, but match was nil", rule.Type)
 	}
 
-	if matchFail == nil {
+	if resultFail.Match == nil {
 		t.Fatalf("Rule %q should have matched a non nil value, with empty rules, but was nil", rule.Type)
 	}
 
-	AssertTokenList(t, []Token{eof_token}, remaining)
-	AssertTokenList(t, tokensFail, remainingFail)
+	AssertTokenList(t, []Token{eof_token}, result.RemainingTokens)
+	AssertTokenList(t, tokensFail, resultFail.RemainingTokens)
 
 	AssertRuleMatchEquals(t, RuleMatch{
 		Type: "MultipleIntsWithSeparator",
@@ -325,13 +325,13 @@ func TestManyWithSeparator(t *testing.T) {
 			},
 		},
 		Tokens: nil,
-	}, *match)
+	}, *result.Match)
 
 	AssertRuleMatchEquals(t, RuleMatch{
 		Type:   "MultipleIntsWithSeparator",
 		Rules:  nil,
 		Tokens: nil,
-	}, *matchFail)
+	}, *resultFail.Match)
 }
 
 func TestOneOrMany(t *testing.T) {
