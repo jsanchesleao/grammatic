@@ -1,6 +1,7 @@
 package grammatic
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -21,15 +22,7 @@ func buildTokenDefs() []TokenDef {
 
 }
 
-func TestCompleteParse(t *testing.T) {
-	input := `
-{
-  "name": "jef",
-  "age": 30,
-  "isRich": false,
-  "hobbies": [ "coding", "gaming" ]
-}`
-
+func buildJsonRule() RuleDef {
 	var ruleValue RuleDef
 
 	ruleString := RuleTokenType("String", "TOKEN_STRING")
@@ -79,13 +72,26 @@ func TestCompleteParse(t *testing.T) {
 		RuleTokenType("EOF", "TOKEN_EOF"),
 	)
 
+	return *ruleJson
+
+}
+
+func TestCompleteParse(t *testing.T) {
+	input := `
+{
+  "name": "jef",
+  "age": 30,
+  "isRich": false,
+  "hobbies": [ "coding", "gaming" ]
+}`
+
 	tokens, err := ExtractTokens(input, buildTokenDefs())
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	syntaxTree, error := ParseRule(*ruleJson, []string{"TOKEN_SPACE"}, tokens)
+	syntaxTree, error := ParseRule(buildJsonRule(), []string{"TOKEN_SPACE"}, tokens)
 
 	if error != nil {
 		t.Fatal(error)
@@ -135,6 +141,38 @@ func TestCompleteParse(t *testing.T) {
 `
 	if expectedTree != tree {
 		t.Fatalf("Unexpected tree result: \n %s", tree)
+	}
+
+}
+
+func TestErrorHandling(t *testing.T) {
+	input := `
+{
+  "wrong": true,
+}
+`
+
+	tokens, err := ExtractTokens(input, buildTokenDefs())
+
+	if err != nil {
+		t.Fatalf("Tokenization failed when it should not. %v", err)
+	}
+
+	syntaxTree, syntaxError := ParseRule(buildJsonRule(), []string{"TOKEN_SPACE"}, tokens)
+
+	if syntaxError == nil {
+		fmt.Printf("%+v\n\n", syntaxTree.PrettyPrint())
+		t.Fatalf("Syntax error should have been generated, but was not")
+	}
+
+	if syntaxTree != nil {
+		t.Fatalf("No syntax tree should have been generated, but was: %v", syntaxTree)
+	}
+
+	expectedErrorMessage := "Unexpected token \"}\" at line 4, column 1"
+
+	if syntaxError.Error() != expectedErrorMessage {
+		t.Fatalf("Expected error message %q but got %q", expectedErrorMessage, syntaxError.Error())
 	}
 
 }

@@ -178,13 +178,18 @@ func ManyWithSeparator(ruleType string, separator, rule *RuleDef) *RuleDef {
 	return &RuleDef{
 		Type: ruleType,
 		Check: func(tokens []Token) RuleDefResult {
+			var error *RuleMatchError = nil
 			remainingTokens := tokens
-			matches := []RuleMatch{}
+			match := &RuleMatch{
+				Type:   ruleType,
+				Tokens: nil,
+				Rules:  []RuleMatch{},
+			}
 			done := false
 			var separatorMatch *RuleMatch = nil
 			for !done {
 				ruleToTest := rule
-				if separatorMatch == nil && len(matches) > 0 {
+				if separatorMatch == nil && len(match.Rules) > 0 {
 					ruleToTest = separator
 				}
 				result := ruleToTest.Check(remainingTokens)
@@ -193,21 +198,26 @@ func ManyWithSeparator(ruleType string, separator, rule *RuleDef) *RuleDef {
 					if ruleToTest.Type == separator.Type {
 						separatorMatch = result.Match
 					} else if separatorMatch != nil {
-						matches = append(matches, *separatorMatch)
-						matches = append(matches, *result.Match)
+						match.Rules = append(match.Rules, *separatorMatch)
+						match.Rules = append(match.Rules, *result.Match)
 						separatorMatch = nil
 					} else {
-						matches = append(matches, *result.Match)
+						match.Rules = append(match.Rules, *result.Match)
 					}
 				} else {
+					if ruleToTest.Type == rule.Type && len(match.Rules) > 0 {
+						error = result.Error
+						match = nil
+					}
 					remainingTokens = result.RemainingTokens
 					done = true
 				}
 			}
+
 			return RuleDefResult{
-				Match:           &RuleMatch{Type: ruleType, Tokens: nil, Rules: matches},
+				Match:           match,
 				RemainingTokens: remainingTokens,
-				Error:           nil,
+				Error:           error,
 			}
 		},
 	}
@@ -267,29 +277,6 @@ func shouldIgnore(ignoredTypes []string, token *Token) bool {
 	return false
 }
 
-func ParseRule(rule RuleDef, ignoredTokenNames []string, tokens []Token) (*RuleMatch, *RuleMatchError) {
-	validTokens := []Token{}
-	for _, token := range tokens {
-		if !shouldIgnore(ignoredTokenNames, &token) {
-			validTokens = append(validTokens, token)
-		}
-	}
-
-	result := rule.Check(validTokens)
-
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	if len(result.RemainingTokens) != 0 {
-		return nil, &RuleMatchError{
-			RuleType: rule.Type,
-			Token:    result.RemainingTokens[0],
-		}
-	}
-
-	return result.Match, result.Error
-}
-
 func (m *RuleMatch) format(indentation string, firstChild, lastChild bool) string {
 	heading := "├─"
 
@@ -335,4 +322,33 @@ func formatString(text string) string {
 
 func (m *RuleMatch) PrettyPrint() string {
 	return fmt.Sprintln(m.format("", true, true))
+}
+
+func (e *RuleMatchError) GetError() error {
+	return fmt.Errorf("Unexpected token %q at line %d, column %d", e.Token.Value, e.Token.Line, e.Token.Col)
+}
+
+func ParseRule(rule RuleDef, ignoredTokenNames []string, tokens []Token) (*RuleMatch, error) {
+	validTokens := []Token{}
+	for _, token := range tokens {
+		if !shouldIgnore(ignoredTokenNames, &token) {
+			validTokens = append(validTokens, token)
+		}
+	}
+
+	result := rule.Check(validTokens)
+
+	if result.Error != nil {
+		return nil, result.Error.GetError()
+	}
+
+	if len(result.RemainingTokens) != 0 {
+		err := RuleMatchError{
+			Token:    result.RemainingTokens[0],
+			RuleType: rule.Type,
+		}
+		return nil, err.GetError()
+	}
+
+	return result.Match, nil
 }
