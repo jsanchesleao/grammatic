@@ -127,11 +127,15 @@ func Seq(ruleType string, rules ...*RuleDef) *RuleDef {
 			matches := []RuleMatch{}
 			for _, rule := range rules {
 				result := rule.Check(remainingTokens)
-				remainingTokens = result.RemainingTokens
 				if result.Error == nil {
+					remainingTokens = result.RemainingTokens
 					matches = append(matches, *result.Match)
 				} else {
-					return RuleDefResult{Match: nil, RemainingTokens: result.RemainingTokens, Error: result.Error}
+					return RuleDefResult{
+						Match:           nil,
+						RemainingTokens: tokens,
+						Error:           result.Error,
+					}
 				}
 			}
 
