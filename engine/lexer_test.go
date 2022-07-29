@@ -1,4 +1,4 @@
-package grammatic
+package engine
 
 import "testing"
 

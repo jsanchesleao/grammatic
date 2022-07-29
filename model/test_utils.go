@@ -1,4 +1,4 @@
-package grammatic
+package model
 
 import "testing"
 
@@ -20,7 +20,7 @@ func AssertTokenList(t *testing.T, expected, actual []Token) {
 	}
 }
 
-func AssertRuleMatchEquals(t *testing.T, expected, actual Node) {
+func AssertNodeEquals(t *testing.T, expected, actual Node) {
 	t.Helper()
 
 	if expected.Type != actual.Type {
@@ -41,8 +41,8 @@ func AssertRuleMatchEquals(t *testing.T, expected, actual Node) {
 		t.Fatalf("Expected to found %d matched subrules, but found %d", len(expected.Rules), len(actual.Rules))
 	}
 
-	for i, ruleMatch := range expected.Rules {
-		AssertRuleMatchEquals(t, ruleMatch, actual.Rules[i])
+	for i, node := range expected.Rules {
+		AssertNodeEquals(t, node, actual.Rules[i])
 	}
 
 }
