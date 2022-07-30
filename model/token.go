@@ -14,7 +14,7 @@ type Token struct {
 	Col   int
 }
 
-func (t *Token) isAfter(other *Token) bool {
+func (t Token) IsAfter(other Token) bool {
 	if t.Line < other.Line {
 		return false
 	} else if t.Line > other.Line {

@@ -34,9 +34,12 @@ func Or(ruleType string, rules ...*model.Rule) *model.Rule {
 							hasResult = true
 							stream.Send(result)
 							if !stream.Continue() {
+								iterator.Done()
 								break loop
 							}
-						} else {
+						} else if err == nil {
+							err = result.Error
+						} else if result.Error.Token.IsAfter(err.Token) {
 							err = result.Error
 						}
 						result = iterator.Next()

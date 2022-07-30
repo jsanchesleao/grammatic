@@ -82,3 +82,23 @@ func TestDoneOr(t *testing.T) {
 		t.Fatalf("Expected second candidate to be nil, but was %#v", resultTwo)
 	}
 }
+
+func TestOrFail(t *testing.T) {
+	rule := Or("IntOrKeyword",
+		RuleTokenType("KeywordOne", "TOKEN_KEYWORD"),
+		RuleTokenType("Int", "TOKEN_INT"),
+	)
+	var tokens = []model.Token{string_token, eof_token}
+
+	iterator := rule.Check(tokens)
+	result := iterator.Next()
+
+	if result.Error == nil {
+		t.Fatalf("Expected rule to produce an error but it did not")
+	}
+
+	expectedErrorMessage := "Unexpected token \"\\\"test\\\"\" at line 1, column 1"
+	if result.Error.GetError().Error() != expectedErrorMessage {
+		t.Fatalf("Expected error message to be \n%q\n, but was \n%q\n", expectedErrorMessage, result.Error.GetError().Error())
+	}
+}
