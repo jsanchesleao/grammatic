@@ -11,6 +11,17 @@ func Seq(ruleType string, rules ...*model.Rule) *model.Rule {
 		Check: func(tokens []model.Token) model.RuleResultIterator {
 			stream := NewResultStream()
 
+			go func() {
+				if !stream.Continue() {
+					stream.Done()
+					return
+				}
+
+				// logic goes here
+
+				stream.Done()
+			}()
+
 			return stream
 		},
 	}

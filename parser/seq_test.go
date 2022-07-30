@@ -17,6 +17,10 @@ func TestSeq(t *testing.T) {
 	iterator := rule.Check(tokens)
 	result := iterator.Next()
 
+	if result == nil {
+		t.Fatalf("Expected first result to be not nil, but it was")
+	}
+
 	nextResult := iterator.Next()
 	if nextResult != nil {
 		t.Fatalf("Expected second candidate to be nil, but was %#v", nextResult)
