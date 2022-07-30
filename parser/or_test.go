@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"grammatic/model"
 	"testing"
 )
@@ -71,7 +70,6 @@ func TestDoneOr(t *testing.T) {
 	resultOne := iterator.Next()
 
 	iterator.Done()
-	fmt.Printf("stream address is %+v\n", &iterator)
 	resultTwo := iterator.Next()
 
 	if resultOne == nil {

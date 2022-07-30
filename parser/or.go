@@ -5,6 +5,9 @@ import (
 )
 
 func Or(ruleType string, rules ...*model.Rule) *model.Rule {
+	if len(rules) == 0 {
+		panic("Provide at least one rule to Or combinator")
+	}
 	return &model.Rule{
 		Type: ruleType,
 		Check: func(tokens []model.Token) model.RuleResultIterator {
