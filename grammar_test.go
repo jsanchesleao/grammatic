@@ -2,7 +2,8 @@ package grammatic
 
 import (
 	"fmt"
-	"grammatic/engine"
+	"grammatic/lexer"
+	"grammatic/parser"
 	"testing"
 )
 
@@ -10,42 +11,42 @@ func TestGrammar(t *testing.T) {
 
 	g := NewGrammar()
 
-	g.DefineRule(engine.Or("Expression",
+	g.DefineRule(parser.Or("Expression",
 		g.GetRule("Term"),
 		g.GetRule("PlusExpr"),
 		g.GetRule("MinusExpr"),
 	))
 
-	g.DefineRule(engine.Seq("PlusExpr",
+	g.DefineRule(parser.Seq("PlusExpr",
 		g.GetRule("Expression"),
 		g.GetRule("Plus"),
 		g.GetRule("Expression"),
 	))
 
-	g.DefineRule(engine.Seq("MinusExpr",
+	g.DefineRule(parser.Seq("MinusExpr",
 		g.GetRule("Expression"),
 		g.GetRule("Minus"),
 		g.GetRule("Expression"),
 	))
 
-	g.DefineRule(engine.Or("Term",
+	g.DefineRule(parser.Or("Term",
 		g.GetRule("Number"),
 		g.GetRule("ParensExpr"),
 	))
 
-	g.DefineRule(engine.Seq("ParensExpr",
+	g.DefineRule(parser.Seq("ParensExpr",
 		g.GetRule("LeftParens"),
 		g.GetRule("Expression"),
 		g.GetRule("RightParens"),
 	))
 
-	g.DefineToken("Number", engine.NumberTokenFormat)
+	g.DefineToken("Number", lexer.NumberTokenFormat)
 	g.DefineToken("LeftParens", "^\\(")
 	g.DefineToken("RightParens", "^\\)")
 	g.DefineToken("Plus", "^\\+")
 	g.DefineToken("Minus", "^-")
 
-	g.DefineIgnoredToken("Space", engine.EmptySpaceFormat)
+	g.DefineIgnoredToken("Space", lexer.EmptySpaceFormat)
 
 	tree, err := g.Parse("Expression", "2 + 2")
 
