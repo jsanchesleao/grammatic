@@ -63,9 +63,6 @@ func (s *ResultStream) Next() *model.RuleResult {
 	return value
 }
 
-func (s *ResultStream) finish() {
-}
-
 func (s *ResultStream) Done() {
 	if !s.done {
 		s.done = true

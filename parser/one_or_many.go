@@ -1,10 +1,8 @@
 package parser
 
-import (
-	"grammatic/model"
-)
+import "grammatic/model"
 
-func Many(ruleType string, rule *model.Rule) *model.Rule {
+func OneOrMany(ruleType string, rule *model.Rule) *model.Rule {
 	return &model.Rule{
 		Type: ruleType,
 		Check: func(tokens []model.Token) model.RuleResultIterator {
@@ -17,6 +15,15 @@ func Many(ruleType string, rule *model.Rule) *model.Rule {
 					return
 				}
 
+				var errorToken model.Token
+				if len(tokens) > 0 {
+					errorToken = tokens[0]
+				}
+				var error *model.RuleError = &model.RuleError{
+					RuleType: ruleType,
+					Token:    errorToken,
+				}
+				success := false
 				iterator := rule.Check(tokens)
 			outer:
 				for {
@@ -27,8 +34,13 @@ func Many(ruleType string, rule *model.Rule) *model.Rule {
 					}
 
 					if result.Error != nil {
+						if result.Error.Token.IsAfter(error.Token) {
+							error = result.Error
+						}
 						continue
 					}
+
+					success = true
 
 					nextIterator := Many(ruleType, rule).Check(result.RemainingTokens)
 
@@ -63,17 +75,15 @@ func Many(ruleType string, rule *model.Rule) *model.Rule {
 
 				}
 
-				stream.Send(&model.RuleResult{
-					Match: &model.Node{
-						Type:  ruleType,
-						Token: nil,
-						Rules: []model.Node{},
-					},
-					RemainingTokens: tokens,
-					Error:           nil,
-				})
+				if !success {
+					stream.Send(&model.RuleResult{
+						Match:           nil,
+						RemainingTokens: tokens,
+						Error:           error,
+					})
+					stream.Continue()
+				}
 
-				stream.Continue()
 				stream.Done()
 
 			}()
