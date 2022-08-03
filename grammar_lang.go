@@ -1,7 +1,7 @@
 package grammatic
 
 import (
-	//	"fmt"
+	"fmt"
 	"grammatic/lexer"
 )
 
@@ -11,41 +11,63 @@ func GrammarParsingGrammar() Grammar {
 
 	g.DefineRule("Grammar", g.OneOrMany("GrammarRule"))
 
-	g.DefineRule("GrammarRule", g.Seq("Identifier", "Assignment", "RuleExpression"))
+	g.DefineRule("GrammarRule",
+		g.Seq("RuleName", "Assignment", "RuleExpression"))
 
-	g.DefineRule("RuleExpression", g.Or(
-		"Token",
-		"ConvenienceToken",
-		"Identifier",
-		"OrExpression",
-		"SeqExpression",
-		"ManyExpression",
-		"OneOrManyExpression",
-		"OneOrNoneExpression",
-		"ManyWithSeparatorExpression"),
-	)
+	g.DefineRule("RuleExpression",
+		g.Or(
+			"SeqExpression",
+			"OrExpression",
+			"ManyExpression",
+		))
 
-	g.DefineRule("OrExpression", g.ManyWithSeparator("Identifier", "Pipe"))
-	g.DefineRule("SeqExpression", g.Seq("Identifier", "SeqExpressionTail"))
-	g.DefineRule("SeqExpressionTail", g.OneOrMany("Identifier"))
-	g.DefineRule("ManyExpression", g.Seq("Identifier", "Star"))
-	g.DefineRule("OneOrManyExpression", g.Seq("Identifier", "Plus"))
-	g.DefineRule("OneOrNoneExpression", g.Seq("Identifier", "QuestionMark"))
-	g.DefineRule("ManyWithSeparatorExpression", g.Seq("Identifier", "Separator", "Star"))
-	g.DefineRule("Separator", g.Seq("LeftBracket", "Identifier", "RightBracket"))
+	g.DefineRule("ManyExpression",
+		g.Seq("ManyExpressionItem", "Star"))
+
+	g.DefineRule("ManyExpressionItem",
+		g.Or("RuleName", "InlineRuleExpression"))
+
+	g.DefineRule("OrExpression",
+		g.Seq("OrExpressionItem", "Pipe", "OrExpressionTail"))
+
+	g.DefineRule("OrExpressionItem",
+		g.Or("InlineSeqExpression", "InlineRuleExpression", "RuleName"))
+
+	g.DefineRule("OrExpressionTail",
+		g.OneOrManyWithSeparator("OrExpressionItem", "Pipe"))
+
+	g.DefineRule("SeqExpression",
+		g.Seq("SeqExpressionItem", "SeqExpressionTail"))
+
+	g.DefineRule("SeqExpressionItem",
+		g.Or("InlineRuleExpression", "RuleName"))
+
+	g.DefineRule("SeqExpressionTail",
+		g.OneOrMany("SeqExpressionItem"))
+
+	g.DefineRule("InlineRuleExpression",
+		g.Seq("LeftParens", "RuleExpression", "As", "RuleName", "RightParens"))
+
+	g.DefineRule("InlineSeqExpression",
+		g.Seq("RuleName", "InlineSeqExpressionTail", "As", "RuleName"))
+
+	g.DefineRule("InlineSeqExpressionTail", g.OneOrMany("RuleName"))
 
 	g.DefineToken("Token", "^\\/([^\\/]|\\w|\\s|\\W|\\S|\\d|\\D)*?\\/")
 	g.DefineToken("ConvenienceToken", "^\\$\\w+")
-
-	g.DefineToken("Identifier", lexer.KeywordFormat)
+	g.DefineToken("As", "^as")
+	g.DefineToken("RuleName", lexer.KeywordFormat)
 	g.DefineToken("Pipe", "^\\|")
 	g.DefineToken("Star", "^\\*")
 	g.DefineToken("Plus", "^\\+")
 	g.DefineToken("QuestionMark", "^\\?")
 	g.DefineToken("LeftBracket", "^\\[")
 	g.DefineToken("RightBracket", "^\\]")
+	g.DefineToken("LeftParens", "^\\(")
+	g.DefineToken("RightParens", "^\\)")
 	g.DefineToken("Assignment", "^:=")
 
+	g.DefineIgnoredToken("Comment", "^#.*?\\n")
 	g.DefineIgnoredToken("Space", lexer.EmptySpaceFormat)
 
 	return g
@@ -56,22 +78,30 @@ func Compile(grammarText string) Grammar {
 
 	g := GrammarParsingGrammar()
 
-	it := g.RunRule("Grammar", grammarText)
+	node, err := g.Parse("Grammar", grammarText)
 
-	for {
-		result := it.Next()
-		if result == nil {
-			// fmt.Println("Result was NIL")
-			break
-		}
-		if result.Error != nil {
-			// fmt.Println(result.Error.GetError().Error())
-		}
-		if result.Match != nil {
-			// fmt.Println(result.Match.PrettyPrint())
-		}
-
+	if err != nil {
+		panic(err)
 	}
+
+	fmt.Println(node.PrettyPrint())
+
+	//it := g.RunRule("Grammar", grammarText)
+	//
+	//for {
+	//result := it.Next()
+	//if result == nil {
+	//fmt.Println("Result was NIL")
+	//break
+	//}
+	//if result.Error != nil {
+	//fmt.Println(result.Error.GetError().Error())
+	//}
+	//if result.Match != nil {
+	//fmt.Println(result.Match.PrettyPrint())
+	//}
+	//
+	//}
 
 	return NewGrammar()
 

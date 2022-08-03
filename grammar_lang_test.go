@@ -40,8 +40,11 @@ String := $DoubleQuotedStringFormat`
 func TestJSONParsing(t *testing.T) {
 
 	Compile(`
-Value := Object | Array
-Other := A
+#Rules
+Value := Object 
+       | String Bool as Test
+       | (Bool* as Bools)
+Other := A (B | D as WOW) C
 `)
 
 }

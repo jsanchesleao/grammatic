@@ -75,6 +75,14 @@ func (g *Grammar) ManyWithSeparator(rule, separator string) GrammarCombinator {
 	}
 }
 
+func (g *Grammar) OneOrManyWithSeparator(rule, separator string) GrammarCombinator {
+	return GrammarCombinator{
+		Create: func(ruleType string) *model.Rule {
+			return parser.OneOrManyWithSeparator(ruleType, g.GetRule(rule), g.GetRule(separator))
+		},
+	}
+}
+
 func (g *Grammar) OneOrMany(ruleName string) GrammarCombinator {
 	return GrammarCombinator{
 		Create: func(ruleType string) *model.Rule {
