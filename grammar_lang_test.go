@@ -44,7 +44,8 @@ func TestJSONParsing(t *testing.T) {
 Value := Object 
        | String Bool as Test
        | (Bool* as Bools)
-Other := A (B | D as WOW) C
+Other := A B (C? as OtherTail)
+YetAnothe := Other+
 `)
 
 }

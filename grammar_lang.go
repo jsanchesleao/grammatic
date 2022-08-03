@@ -19,12 +19,26 @@ func GrammarParsingGrammar() Grammar {
 			"SeqExpression",
 			"OrExpression",
 			"ManyExpression",
+			"OneOrManyExpression",
+			"OneOrNoneExpression",
 		))
 
 	g.DefineRule("ManyExpression",
 		g.Seq("ManyExpressionItem", "Star"))
 
 	g.DefineRule("ManyExpressionItem",
+		g.Or("RuleName", "InlineRuleExpression"))
+
+	g.DefineRule("OneOrManyExpression",
+		g.Seq("OneOrManyExpressionItem", "Plus"))
+
+	g.DefineRule("OneOrManyExpressionItem",
+		g.Or("RuleName", "InlineRuleExpression"))
+
+	g.DefineRule("OneOrNoneExpression",
+		g.Seq("OneOrNoneExpressionItem", "QuestionMark"))
+
+	g.DefineRule("OneOrNoneExpressionItem",
 		g.Or("RuleName", "InlineRuleExpression"))
 
 	g.DefineRule("OrExpression",
