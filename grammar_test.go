@@ -1,7 +1,6 @@
 package grammatic
 
 import (
-	"fmt"
 	"grammatic/lexer"
 	"testing"
 )
@@ -10,10 +9,17 @@ func TestGrammar(t *testing.T) {
 
 	g := NewGrammar()
 
-	g.DefineRule("Expression", g.Or("Term", "PlusExpr", "MinusExpr"))
-	g.DefineRule("PlusExpr", g.Seq("Expression", "Plus", "Expression"))
-	g.DefineRule("MinusExpr", g.Seq("Expression", "Minus", "Expression"))
+	g.DefineRule("Expression", g.Or("Factor", "Multiplication", "Division"))
+	g.DefineRule("Multiplication", g.Seq("Factor", "Times", "Expression"))
+	g.DefineRule("Division", g.Or("Factor", "DividedBy", "Expression"))
+
+	g.DefineRule("Factor", g.Or("Term", "Addition", "Subtraction"))
+
+	g.DefineRule("Addition", g.Seq("Factor", "Plus", "Expression"))
+	g.DefineRule("Subtraction", g.Or("Factor", "Minus", "Expression"))
+
 	g.DefineRule("Term", g.Or("Number", "ParensExpr"))
+
 	g.DefineRule("ParensExpr", g.Seq("LeftParens", "Expression", "RightParens"))
 
 	g.DefineToken("Number", lexer.NumberTokenFormat)
@@ -21,15 +27,40 @@ func TestGrammar(t *testing.T) {
 	g.DefineToken("RightParens", "^\\)")
 	g.DefineToken("Plus", "^\\+")
 	g.DefineToken("Minus", "^-")
+	g.DefineToken("DividedBy", "^\\/")
+	g.DefineToken("Times", "^\\*")
 
 	g.DefineIgnoredToken("Space", lexer.EmptySpaceFormat)
 
-	tree, err := g.Parse("Expression", "2 + 2")
+	tree, err := g.Parse("Expression", "2 + 2 + 2")
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	fmt.Printf("Tree\n%s", tree.PrettyPrint())
+	expectedTree := `Root
+  ├─Expression
+  │ └─Factor
+  │   └─Addition
+  │     ├─Factor
+  │     │ └─Term
+  │     │   └─Number • 2
+  │     ├─Plus • +
+  │     └─Expression
+  │       └─Factor
+  │         └─Addition
+  │           ├─Factor
+  │           │ └─Term
+  │           │   └─Number • 2
+  │           ├─Plus • +
+  │           └─Expression
+  │             └─Factor
+  │               └─Term
+  │                 └─Number • 2
+  └─EOF • 
 
+`
+	if expectedTree != tree.PrettyPrint() {
+		t.Fatalf("Unexpected tree:\n%s", tree.PrettyPrint())
+	}
 }

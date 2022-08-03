@@ -44,11 +44,19 @@ func Many(ruleType string, rule *model.Rule) *model.Rule {
 							continue inner
 						}
 
+						nodes := []model.Node{}
+						if result.Match != nil {
+							nodes = append(nodes, *result.Match)
+						}
+						if nextResult.Match != nil {
+							nodes = append(nodes, nextResult.Match.Rules...)
+						}
+
 						stream.Send(&model.RuleResult{
 							Match: &model.Node{
 								Type:  ruleType,
 								Token: nil,
-								Rules: append([]model.Node{*result.Match}, *&nextResult.Match.Rules...),
+								Rules: nodes,
 							},
 							RemainingTokens: nextResult.RemainingTokens,
 							Error:           nil,

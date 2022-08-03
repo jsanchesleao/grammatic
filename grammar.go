@@ -67,6 +67,22 @@ func (g *Grammar) Seq(ruleNames ...string) GrammarCombinator {
 	}
 }
 
+func (g *Grammar) ManyWithSeparator(rule, separator string) GrammarCombinator {
+	return GrammarCombinator{
+		Create: func(ruleType string) *model.Rule {
+			return parser.ManyWithSeparator(ruleType, g.GetRule(rule), g.GetRule(separator))
+		},
+	}
+}
+
+func (g *Grammar) OneOrMany(ruleName string) GrammarCombinator {
+	return GrammarCombinator{
+		Create: func(ruleType string) *model.Rule {
+			return parser.OneOrMany(ruleType, g.GetRule(ruleName))
+		},
+	}
+}
+
 func (g *Grammar) DefineToken(name, pattern string) {
 	g.TokenDefs = append(g.TokenDefs, lexer.NewTokenDef(name, pattern))
 	g.DefineRule(name, GrammarCombinator{
@@ -79,6 +95,31 @@ func (g *Grammar) DefineToken(name, pattern string) {
 func (g *Grammar) DefineIgnoredToken(name, pattern string) {
 	g.DefineToken(name, pattern)
 	g.IgnoredTokenTypes = append(g.IgnoredTokenTypes, name)
+}
+
+func (g *Grammar) RunRule(ruleType, input string) model.RuleResultIterator {
+	tokens, err := lexer.ExtractTokens(input, g.TokenDefs)
+
+	if err != nil {
+		panic(err)
+	}
+
+	shouldIgnoreToken := func(token *model.Token) bool {
+		for _, name := range g.IgnoredTokenTypes {
+			if name == token.Type {
+				return true
+			}
+		}
+		return false
+	}
+
+	validTokens := []model.Token{}
+	for _, t := range tokens {
+		if !shouldIgnoreToken(&t) {
+			validTokens = append(validTokens, t)
+		}
+	}
+	return g.GetRule(ruleType).Check(validTokens)
 }
 
 func (g *Grammar) Parse(ruleType, input string) (*model.Node, error) {

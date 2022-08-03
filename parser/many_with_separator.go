@@ -1,6 +1,9 @@
 package parser
 
-import "grammatic/model"
+import (
+	"fmt"
+	"grammatic/model"
+)
 
 func ManyWithSeparator(typeName string, rule *model.Rule, separator *model.Rule) *model.Rule {
 	return &model.Rule{
@@ -17,7 +20,7 @@ func ManyWithSeparator(typeName string, rule *model.Rule, separator *model.Rule)
 				}
 
 				iterator := rule.Check(tokens)
-				subrule := Many(":Tail", Seq(":TailItem", separator, rule))
+				subrule := Many(fmt.Sprintf("%s:Tail", typeName), Seq(fmt.Sprintf("%s:TailItem", typeName), separator, rule))
 
 				for {
 					result := iterator.Next()
@@ -45,19 +48,25 @@ func ManyWithSeparator(typeName string, rule *model.Rule, separator *model.Rule)
 							continue
 						}
 
-						seqNodes := tailResult.Match.GetNodesWithType(":TailItem")
-						nodes := []model.Node{*result.Match}
+						seqNodes := tailResult.Match.GetNodesWithType(fmt.Sprintf("%s:TailItem", typeName))
+						nodes := []model.Node{}
+
+						if result.Match != nil {
+							nodes = append(nodes, *result.Match)
+						}
 
 						for _, node := range seqNodes {
 							nodes = append(nodes, node.Rules...)
 						}
 
+						match := model.Node{
+							Type:  typeName,
+							Token: nil,
+							Rules: nodes,
+						}
+
 						stream.Send(&model.RuleResult{
-							Match: &model.Node{
-								Type:  typeName,
-								Token: nil,
-								Rules: nodes,
-							},
+							Match:           &match,
 							RemainingTokens: tailResult.RemainingTokens,
 							Error:           nil,
 						})

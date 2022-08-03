@@ -39,7 +39,9 @@ func ParseRule(rootRule model.Rule, ignoredTokenTypes []string, tokens []model.T
 		}
 
 		if result.Error != nil {
-			ruleError = result.Error
+			if ruleError == nil || result.Error.Token.IsAfter(ruleError.Token) {
+				ruleError = result.Error
+			}
 			continue
 		}
 

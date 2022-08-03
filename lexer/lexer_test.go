@@ -1,10 +1,13 @@
 package lexer
 
-import "testing"
+import (
+	"grammatic/model"
+	"testing"
+)
 
 func TestSimpleTokenDef(t *testing.T) {
 
-	tokendefs := []TokenDef{
+	tokendefs := []model.TokenDef{
 		NewTokenDef("Keyword", KeywordFormat),
 		NewTokenDef("Space", EmptySpaceFormat),
 		NewTokenDef("String", DoubleQuotedStringFormat),
@@ -19,7 +22,7 @@ func TestSimpleTokenDef(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
-	AssertTokenList(t, []Token{
+	model.AssertTokenList(t, []model.Token{
 		{Type: "Keyword", Value: "prop", Col: 1, Line: 1},
 		{Type: "Space", Value: " ", Col: 5, Line: 1},
 		{Type: "Equals", Value: "=", Col: 6, Line: 1},
@@ -31,7 +34,7 @@ func TestSimpleTokenDef(t *testing.T) {
 }
 
 func TestComplexTokenization(t *testing.T) {
-	tokendefs := []TokenDef{
+	tokendefs := []model.TokenDef{
 		NewTokenDef("Keyword", KeywordFormat),
 		NewTokenDef("Space", EmptySpaceFormat),
 		NewTokenDef("Float", FloatTokenFormat),
@@ -58,7 +61,7 @@ func TestComplexTokenization(t *testing.T) {
 		t.Fail()
 	}
 
-	AssertTokenList(t, []Token{
+	model.AssertTokenList(t, []model.Token{
 		{Type: "OpenBraces", Value: "(", Line: 1, Col: 1},
 		{Type: "Space", Value: "\n  ", Line: 1, Col: 2},
 		{Type: "Keyword", Value: "num", Line: 2, Col: 3},
@@ -97,7 +100,7 @@ func TestComplexTokenization(t *testing.T) {
 }
 
 func TestIllegalCharacter(t *testing.T) {
-	tokendefs := []TokenDef{
+	tokendefs := []model.TokenDef{
 		NewTokenDef("Keyword", KeywordFormat),
 		NewTokenDef("Space", EmptySpaceFormat),
 	}

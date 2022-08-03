@@ -171,7 +171,7 @@ func TestErrorHandling(t *testing.T) {
 		t.Fatalf("No syntax tree should have been generated, but was: %v", syntaxTree)
 	}
 
-	expectedErrorMessage := "Unexpected token \"}\" at line 4, column 1"
+	expectedErrorMessage := "Unexpected token \",\" at line 3, column 16"
 
 	if syntaxError.Error() != expectedErrorMessage {
 		t.Fatalf("Expected error message %q but got %q", expectedErrorMessage, syntaxError.Error())
