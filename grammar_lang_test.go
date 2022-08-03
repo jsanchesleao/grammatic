@@ -39,13 +39,5 @@ String := $DoubleQuotedStringFormat`
 
 func TestJSONParsing(t *testing.T) {
 
-	Compile(`
-#Rules
-Value := Object 
-       | String Bool as Test
-       | (Bool* as Bools)
-Other := A B (C? as OtherTail)
-YetAnothe := Other+
-`)
-
+	Compile(JSONGrammar)
 }

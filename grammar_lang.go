@@ -16,12 +16,15 @@ func GrammarParsingGrammar() Grammar {
 
 	g.DefineRule("RuleExpression",
 		g.Or(
+			"Token",
+			"ConvenienceToken",
 			"SeqExpression",
 			"OrExpression",
 			"ManyExpression",
 			"OneOrManyExpression",
 			"OneOrNoneExpression",
-		))
+			"ManyWithSeparatorExpression",
+			"OneOrManyWithSeparatorExpression"))
 
 	g.DefineRule("ManyExpression",
 		g.Seq("ManyExpressionItem", "Star"))
@@ -29,11 +32,27 @@ func GrammarParsingGrammar() Grammar {
 	g.DefineRule("ManyExpressionItem",
 		g.Or("RuleName", "InlineRuleExpression"))
 
+	g.DefineRule("ManyWithSeparatorExpression",
+		g.Seq(
+			"ManyExpressionItem",
+			"LeftBracket",
+			"ManyExpressionItem",
+			"RightBracket",
+			"Star"))
+
 	g.DefineRule("OneOrManyExpression",
 		g.Seq("OneOrManyExpressionItem", "Plus"))
 
 	g.DefineRule("OneOrManyExpressionItem",
 		g.Or("RuleName", "InlineRuleExpression"))
+
+	g.DefineRule("OneOrManyWithSeparatorExpression",
+		g.Seq(
+			"OneOrManyExpressionItem",
+			"LeftBracket",
+			"OneOrManyExpressionItem",
+			"RightBracket",
+			"Plus"))
 
 	g.DefineRule("OneOrNoneExpression",
 		g.Seq("OneOrNoneExpressionItem", "QuestionMark"))
@@ -45,7 +64,17 @@ func GrammarParsingGrammar() Grammar {
 		g.Seq("OrExpressionItem", "Pipe", "OrExpressionTail"))
 
 	g.DefineRule("OrExpressionItem",
-		g.Or("InlineSeqExpression", "InlineRuleExpression", "RuleName"))
+		g.Or(
+			"InlineSeqExpression",
+			"InlineRuleExpression",
+			"InlineManyExpression",
+			"InlineManyWithSeparatorExpression",
+			"InlineOneOrManyExpression",
+			"InlineOneOrManyWithSeparatorExpression",
+			"InlineOneOrNoneExpression",
+			"Token",
+			"ConvenienceToken",
+			"RuleName"))
 
 	g.DefineRule("OrExpressionTail",
 		g.OneOrManyWithSeparator("OrExpressionItem", "Pipe"))
@@ -54,7 +83,16 @@ func GrammarParsingGrammar() Grammar {
 		g.Seq("SeqExpressionItem", "SeqExpressionTail"))
 
 	g.DefineRule("SeqExpressionItem",
-		g.Or("InlineRuleExpression", "RuleName"))
+		g.Or(
+			"InlineRuleExpression",
+			"InlineManyExpression",
+			"InlineManyWithSeparatorExpression",
+			"InlineOneOrManyExpression",
+			"InlineOneOrManyWithSeparatorExpression",
+			"InlineOneOrNoneExpression",
+			"Token",
+			"ConvenienceToken",
+			"RuleName"))
 
 	g.DefineRule("SeqExpressionTail",
 		g.OneOrMany("SeqExpressionItem"))
@@ -66,6 +104,21 @@ func GrammarParsingGrammar() Grammar {
 		g.Seq("RuleName", "InlineSeqExpressionTail", "As", "RuleName"))
 
 	g.DefineRule("InlineSeqExpressionTail", g.OneOrMany("RuleName"))
+
+	g.DefineRule("InlineManyExpression",
+		g.Seq("ManyExpression", "As", "RuleName"))
+
+	g.DefineRule("InlineManyWithSeparatorExpression",
+		g.Seq("ManyWithSeparatorExpression", "As", "RuleName"))
+
+	g.DefineRule("InlineOneOrManyWithSeparatorExpression",
+		g.Seq("OneOrManyWithSeparatorExpression", "As", "RuleName"))
+
+	g.DefineRule("InlineOneOrManyExpression",
+		g.Seq("OneOrManyExpression", "As", "RuleName"))
+
+	g.DefineRule("InlineOneOrNoneExpression",
+		g.Seq("OneOrNoneExpression", "As", "RuleName"))
 
 	g.DefineToken("Token", "^\\/([^\\/]|\\w|\\s|\\W|\\S|\\d|\\D)*?\\/")
 	g.DefineToken("ConvenienceToken", "^\\$\\w+")
