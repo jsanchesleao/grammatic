@@ -58,6 +58,11 @@ func (s *ResultStream) Next() *model.RuleResult {
 	if s.done {
 		return nil
 	}
+
+	defer func() {
+		recover()
+	}()
+
 	s.control <- CONTROL_CONTINUE
 	value := <-s.output
 	return value
