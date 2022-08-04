@@ -153,23 +153,6 @@ func Compile(grammarText string) Grammar {
 
 	fmt.Println(node.PrettyPrint())
 
-	//it := g.RunRule("Grammar", grammarText)
-	//
-	//for {
-	//result := it.Next()
-	//if result == nil {
-	//fmt.Println("Result was NIL")
-	//break
-	//}
-	//if result.Error != nil {
-	//fmt.Println(result.Error.GetError().Error())
-	//}
-	//if result.Match != nil {
-	//fmt.Println(result.Match.PrettyPrint())
-	//}
-	//
-	//}
-
 	return NewGrammar()
 
 }
