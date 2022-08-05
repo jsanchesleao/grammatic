@@ -45,17 +45,19 @@ func TestJSONParsing(t *testing.T) {
 Line := LParen
         Number[Comma]+ as Items
         RParen
+        (Semicolon? as LineEnd)
 
 Number := $NumberFormat
 LParen := /\(/
 RParen := /\)/
 Comma := /,/
+Semicolon := /;/
 Spaces := $EmptySpaceFormat (ignore)
 `)
 
 	fmt.Println(grammar.TokenDefs)
 
-	node, err := grammar.Parse("Line", "( 5, 6, 7 )")
+	node, err := grammar.Parse("Line", "( 5, 6, 7 );")
 	if err != nil {
 		panic(err)
 	}

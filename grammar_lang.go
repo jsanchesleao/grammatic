@@ -261,6 +261,22 @@ func createRules(grammar *Grammar, node *model.Node) *GrammarCombinator {
 
 		combinator := grammar.OneOrManyWithSeparator(itemName, separatorName)
 		return &combinator
+
+	case "OneOrNoneExpression":
+		item := node.GetNodeWithType("OneOrNoneExpressionItem")
+		ruleName := item.GetNodeWithType("RuleName")
+		inlineRule := item.GetNodeWithType("InlineRuleExpresion")
+
+		if ruleName != nil {
+			combinator := grammar.OneOrNone(ruleName.Token.Value)
+			return &combinator
+		} else if inlineRule != nil {
+			inlineRuleName := processInlineRuleExpression(grammar, inlineRule)
+			combinator := grammar.OneOrNone(inlineRuleName)
+			return &combinator
+		}
+		return nil
+
 	case "SeqExpression":
 		firstItem := node.GetNodeWithType("SeqExpressionItem")
 		tailItems := node.GetNodeWithType("SeqExpressionTail").GetNodesWithType("SeqExpressionItem")
@@ -373,6 +389,16 @@ func processSeqExpressionItem(grammar *Grammar, node *model.Node) string {
 		ruleName := itemNode.GetNodeWithType("RuleName")
 		oneOrManyExpression := itemNode.GetNodeWithType("OneOrManyWithSeparatorExpression")
 		combinator := createRules(grammar, oneOrManyExpression)
+		if combinator != nil {
+			grammar.DefineRule(ruleName.Token.Value, *combinator)
+			return ruleName.Token.Value
+		}
+		return ""
+
+	case "InlineOneOrNoneExpression":
+		ruleName := itemNode.GetNodeWithType("RuleName")
+		oneOrNoneExpression := itemNode.GetNodeWithType("OneOrNoneExpression")
+		combinator := createRules(grammar, oneOrNoneExpression)
 		if combinator != nil {
 			grammar.DefineRule(ruleName.Token.Value, *combinator)
 			return ruleName.Token.Value
