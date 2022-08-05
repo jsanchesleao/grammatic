@@ -42,21 +42,20 @@ String := $DoubleQuotedStringFormat`
 
 func TestJSONParsing(t *testing.T) {
 	grammar := Compile(`
-Line := Number
-        Pluses
-        Number
-
-Pluses := Plus*
+Line := LParen
+        Number[Comma]+ as Items
+        RParen
 
 Number := $NumberFormat
-Plus := /\+/
-Minus := /-/ 
+LParen := /\(/
+RParen := /\)/
+Comma := /,/
 Spaces := $EmptySpaceFormat (ignore)
 `)
 
 	fmt.Println(grammar.TokenDefs)
 
-	node, err := grammar.Parse("Line", "2 + + + 5")
+	node, err := grammar.Parse("Line", "( 5, 6, 7 )")
 	if err != nil {
 		panic(err)
 	}

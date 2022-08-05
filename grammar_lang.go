@@ -188,15 +188,6 @@ func createRules(grammar *Grammar, node *model.Node) *GrammarCombinator {
 	case "RuleExpression":
 		return createRules(grammar, &node.Rules[0])
 
-	case "ConvenienceToken":
-		name := node.Token.Value[1:]
-		pattern := lexer.GetConvenienceTokenPattern(name)
-		if pattern != "" {
-			return nil
-		} else {
-			panic(fmt.Errorf("Convenience Pattern %q not found", name))
-		}
-
 	case "ManyExpression":
 		item := node.GetNodeWithType("ManyExpressionItem")
 		ruleName := item.GetNodeWithType("RuleName")
@@ -210,9 +201,66 @@ func createRules(grammar *Grammar, node *model.Node) *GrammarCombinator {
 			combinator := grammar.Many(inlineRuleName)
 			return &combinator
 		}
-
 		return nil
 
+	case "ManyWithSeparatorExpression":
+		item := node.Rules[0]
+		separator := node.Rules[2]
+
+		itemName := ""
+		separatorName := ""
+
+		if item.GetNodeWithType("InlineRuleExpression") != nil {
+			itemName = processInlineRuleExpression(grammar, item.GetNodeWithType("InlineRuleExpression"))
+		} else {
+			itemName = item.GetNodeWithType("RuleName").Token.Value
+		}
+
+		if separator.GetNodeWithType("InlineRuleExpression") != nil {
+			separatorName = processInlineRuleExpression(grammar, separator.GetNodeWithType("InlineRuleExpression"))
+		} else {
+			separatorName = separator.GetNodeWithType("RuleName").Token.Value
+		}
+
+		combinator := grammar.ManyWithSeparator(itemName, separatorName)
+		return &combinator
+
+	case "OneOrManyExpression":
+		item := node.GetNodeWithType("OneOrManyExpressionItem")
+		ruleName := item.GetNodeWithType("RuleName")
+		inlineRule := item.GetNodeWithType("InlineRuleExpresion")
+
+		if ruleName != nil {
+			combinator := grammar.OneOrMany(ruleName.Token.Value)
+			return &combinator
+		} else if inlineRule != nil {
+			inlineRuleName := processInlineRuleExpression(grammar, inlineRule)
+			combinator := grammar.OneOrMany(inlineRuleName)
+			return &combinator
+		}
+		return nil
+
+	case "OneOrManyWithSeparatorExpression":
+		item := node.Rules[0]
+		separator := node.Rules[2]
+
+		itemName := ""
+		separatorName := ""
+
+		if item.GetNodeWithType("InlineRuleExpression") != nil {
+			itemName = processInlineRuleExpression(grammar, item.GetNodeWithType("InlineRuleExpression"))
+		} else {
+			itemName = item.GetNodeWithType("RuleName").Token.Value
+		}
+
+		if separator.GetNodeWithType("InlineRuleExpression") != nil {
+			separatorName = processInlineRuleExpression(grammar, separator.GetNodeWithType("InlineRuleExpression"))
+		} else {
+			separatorName = separator.GetNodeWithType("RuleName").Token.Value
+		}
+
+		combinator := grammar.OneOrManyWithSeparator(itemName, separatorName)
+		return &combinator
 	case "SeqExpression":
 		firstItem := node.GetNodeWithType("SeqExpressionItem")
 		tailItems := node.GetNodeWithType("SeqExpressionTail").GetNodesWithType("SeqExpressionItem")
@@ -299,7 +347,36 @@ func processSeqExpressionItem(grammar *Grammar, node *model.Node) string {
 			grammar.DefineRule(ruleName.Token.Value, *combinator)
 			return ruleName.Token.Value
 		}
+		return ""
 
+	case "InlineManyWithSeparatorExpression":
+		ruleName := itemNode.GetNodeWithType("RuleName")
+		manyExpression := itemNode.GetNodeWithType("ManyWithSeparatorExpression")
+		combinator := createRules(grammar, manyExpression)
+		if combinator != nil {
+			grammar.DefineRule(ruleName.Token.Value, *combinator)
+			return ruleName.Token.Value
+		}
+		return ""
+
+	case "InlineOneOrManyExpression":
+		ruleName := itemNode.GetNodeWithType("RuleName")
+		oneOrManyExpression := itemNode.GetNodeWithType("OneOrManyExpression")
+		combinator := createRules(grammar, oneOrManyExpression)
+		if combinator != nil {
+			grammar.DefineRule(ruleName.Token.Value, *combinator)
+			return ruleName.Token.Value
+		}
+		return ""
+
+	case "InlineOneOrManyWithSeparatorExpression":
+		ruleName := itemNode.GetNodeWithType("RuleName")
+		oneOrManyExpression := itemNode.GetNodeWithType("OneOrManyWithSeparatorExpression")
+		combinator := createRules(grammar, oneOrManyExpression)
+		if combinator != nil {
+			grammar.DefineRule(ruleName.Token.Value, *combinator)
+			return ruleName.Token.Value
+		}
 		return ""
 	}
 
