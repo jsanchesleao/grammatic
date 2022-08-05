@@ -13,7 +13,10 @@ type Grammar struct {
 }
 
 type GrammarCombinator struct {
-	Create func(string) *model.Rule
+	IsToken        bool
+	IsIgnoredToken bool
+	Pattern        string
+	Create         func(string) *model.Rule
 }
 
 func NewGrammar() Grammar {
@@ -40,7 +43,29 @@ func (g *Grammar) DefineRule(ruleType string, combinator GrammarCombinator) {
 	if g.Rules[ruleType].Type != ruleType {
 		panic("Cannot override rule type")
 	}
-	*g.Rules[ruleType] = *combinator.Create(ruleType)
+	if combinator.IsToken && combinator.IsIgnoredToken {
+		g.DefineIgnoredToken(ruleType, combinator.Pattern)
+	} else if combinator.IsToken && !combinator.IsIgnoredToken {
+		g.DefineToken(ruleType, combinator.Pattern)
+	} else {
+		*g.Rules[ruleType] = *combinator.Create(ruleType)
+	}
+}
+
+func (g *Grammar) Token(pattern string) GrammarCombinator {
+	return GrammarCombinator{
+		IsToken:        true,
+		IsIgnoredToken: false,
+		Pattern:        pattern,
+	}
+}
+
+func (g *Grammar) IgnoredToken(pattern string) GrammarCombinator {
+	return GrammarCombinator{
+		IsToken:        true,
+		IsIgnoredToken: true,
+		Pattern:        pattern,
+	}
 }
 
 func (g *Grammar) Or(ruleNames ...string) GrammarCombinator {
@@ -63,6 +88,22 @@ func (g *Grammar) Seq(ruleNames ...string) GrammarCombinator {
 	return GrammarCombinator{
 		Create: func(ruleType string) *model.Rule {
 			return parser.Seq(ruleType, rules...)
+		},
+	}
+}
+
+func (g *Grammar) OneOrNone(rule string) GrammarCombinator {
+	return GrammarCombinator{
+		Create: func(ruleType string) *model.Rule {
+			return parser.OneOrNone(ruleType, g.GetRule(rule))
+		},
+	}
+}
+
+func (g *Grammar) Many(rule string) GrammarCombinator {
+	return GrammarCombinator{
+		Create: func(ruleType string) *model.Rule {
+			return parser.Many(ruleType, g.GetRule(rule))
 		},
 	}
 }

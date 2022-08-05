@@ -3,6 +3,7 @@ package grammatic
 import (
 	"fmt"
 	"grammatic/lexer"
+	"grammatic/model"
 )
 
 func GrammarParsingGrammar() Grammar {
@@ -16,7 +17,7 @@ func GrammarParsingGrammar() Grammar {
 
 	g.DefineRule("RuleExpression",
 		g.Or(
-			"Token",
+			"TokenExpression",
 			"ConvenienceToken",
 			"SeqExpression",
 			"OrExpression",
@@ -72,8 +73,6 @@ func GrammarParsingGrammar() Grammar {
 			"InlineOneOrManyExpression",
 			"InlineOneOrManyWithSeparatorExpression",
 			"InlineOneOrNoneExpression",
-			"Token",
-			"ConvenienceToken",
 			"RuleName"))
 
 	g.DefineRule("OrExpressionTail",
@@ -90,8 +89,6 @@ func GrammarParsingGrammar() Grammar {
 			"InlineOneOrManyExpression",
 			"InlineOneOrManyWithSeparatorExpression",
 			"InlineOneOrNoneExpression",
-			"Token",
-			"ConvenienceToken",
 			"RuleName"))
 
 	g.DefineRule("SeqExpressionTail",
@@ -120,9 +117,22 @@ func GrammarParsingGrammar() Grammar {
 	g.DefineRule("InlineOneOrNoneExpression",
 		g.Seq("OneOrNoneExpression", "As", "RuleName"))
 
+	g.DefineRule("TokenExpression",
+		g.Seq("TokenExpressionBody", "TokenExpressionFlag"))
+
+	g.DefineRule("TokenExpressionBody",
+		g.Or("Token", "ConvenienceToken"))
+
+	g.DefineRule("TokenExpressionFlag",
+		g.OneOrNone("TokenExpressionFlagValue"))
+
+	g.DefineRule("TokenExpressionFlagValue",
+		g.Seq("LeftParens", "Ignore", "RightParens"))
+
 	g.DefineToken("Token", "^\\/([^\\/]|\\w|\\s|\\W|\\S|\\d|\\D)*?\\/")
 	g.DefineToken("ConvenienceToken", "^\\$\\w+")
 	g.DefineToken("As", "^as")
+	g.DefineToken("Ignore", "^ignore")
 	g.DefineToken("RuleName", lexer.KeywordFormat)
 	g.DefineToken("Pipe", "^\\|")
 	g.DefineToken("Star", "^\\*")
@@ -141,6 +151,162 @@ func GrammarParsingGrammar() Grammar {
 
 }
 
+func createRules(grammar *Grammar, node *model.Node) *GrammarCombinator {
+	switch node.Type {
+
+	case "Root":
+		grammarNode := node.GetNodeWithType("Grammar")
+		createRules(grammar, grammarNode)
+		return nil
+
+	case "Grammar":
+		grammarRuleNodes := node.GetNodesWithType("GrammarRule")
+		for _, grammarRuleNode := range grammarRuleNodes {
+			createRules(grammar, grammarRuleNode)
+		}
+		return nil
+
+	case "GrammarRule":
+		nameNode := node.Rules[0]
+		ruleExpressionNode := node.Rules[2]
+
+		grammarCombinator := createRules(grammar, &ruleExpressionNode)
+		if grammarCombinator != nil {
+			grammar.DefineRule(nameNode.Token.Value, *grammarCombinator)
+		}
+		return nil
+
+	case "TokenExpression":
+		body := node.GetNodeWithType("TokenExpressionBody")
+		flag := node.GetNodeWithType("TokenExpressionFlag")
+
+		flagValue := processTokenFlag(flag)
+		combinator := processToken(grammar, body, flagValue)
+
+		return &combinator
+
+	case "RuleExpression":
+		return createRules(grammar, &node.Rules[0])
+
+	case "ConvenienceToken":
+		name := node.Token.Value[1:]
+		pattern := lexer.GetConvenienceTokenPattern(name)
+		if pattern != "" {
+			return nil
+		} else {
+			panic(fmt.Errorf("Convenience Pattern %q not found", name))
+		}
+
+	case "ManyExpression":
+		item := node.GetNodeWithType("ManyExpressionItem")
+		ruleName := item.GetNodeWithType("RuleName")
+		inlineRule := item.GetNodeWithType("InlineRuleExpresion")
+
+		if ruleName != nil {
+			combinator := grammar.Many(ruleName.Token.Value)
+			return &combinator
+		} else if inlineRule != nil {
+			inlineRuleName := processInlineRuleExpression(grammar, inlineRule)
+			combinator := grammar.Many(inlineRuleName)
+			return &combinator
+		}
+
+		return nil
+
+	case "SeqExpression":
+		firstItem := node.GetNodeWithType("SeqExpressionItem")
+		tailItems := node.GetNodeWithType("SeqExpressionTail").GetNodesWithType("SeqExpressionItem")
+
+		items := append([]*model.Node{firstItem}, tailItems...)
+
+		ruleNames := []string{}
+		for _, item := range items {
+			ruleName := processSeqExpressionItem(grammar, item)
+			if ruleName != "" {
+				ruleNames = append(ruleNames, processSeqExpressionItem(grammar, item))
+			}
+		}
+
+		seqCombinator := grammar.Seq(ruleNames...)
+
+		return &seqCombinator
+
+	}
+
+	return nil
+}
+
+func processToken(grammar *Grammar, node *model.Node, flag string) GrammarCombinator {
+	convenienceToken := node.GetNodeWithType("ConvenienceToken")
+	token := node.GetNodeWithType("Token")
+
+	pattern := ""
+	if convenienceToken != nil {
+		pattern = lexer.GetConvenienceTokenPattern(convenienceToken.Token.Value[1:])
+	} else if token != nil {
+		pattern = fmt.Sprintf("^%s", token.Token.Value[1:len(token.Token.Value)-1])
+	}
+
+	if flag == "ignore" {
+		return grammar.IgnoredToken(pattern)
+	} else {
+		return grammar.Token(pattern)
+	}
+}
+
+func processTokenFlag(node *model.Node) string {
+	if node == nil || len(node.Rules) == 0 {
+		return ""
+	}
+	valueNode := node.GetNodeWithType("TokenExpressionFlagValue")
+	return valueNode.GetNodeWithType("Ignore").Token.Value
+}
+
+func processInlineRuleExpression(grammar *Grammar, node *model.Node) string {
+	ruleName := node.GetNodeWithType("RuleName")
+	ruleExpression := node.GetNodeWithType("RuleExpression")
+	combinator := createRules(grammar, ruleExpression)
+
+	if combinator != nil {
+		grammar.DefineRule(ruleName.Token.Value, *combinator)
+		return ruleName.Token.Value
+	} else {
+		return ""
+	}
+
+}
+
+func processSeqExpressionItem(grammar *Grammar, node *model.Node) string {
+	itemNode := node.Rules[0]
+
+	switch itemNode.Type {
+	case "RuleName":
+		return itemNode.Token.Value
+	case "InlineRuleExpression":
+		ruleName := itemNode.GetNodeWithType("RuleName")
+		ruleExpression := itemNode.GetNodeWithType("RuleExpression")
+		combinator := createRules(grammar, ruleExpression)
+		if combinator != nil {
+			grammar.DefineRule(ruleName.Token.Value, *combinator)
+		}
+		return ruleName.Token.Value
+
+	case "InlineManyExpression":
+		ruleName := itemNode.GetNodeWithType("RuleName")
+		manyExpression := itemNode.GetNodeWithType("ManyExpression")
+		combinator := createRules(grammar, manyExpression)
+		if combinator != nil {
+			grammar.DefineRule(ruleName.Token.Value, *combinator)
+			return ruleName.Token.Value
+		}
+
+		return ""
+	}
+
+	return ""
+
+}
+
 func Compile(grammarText string) Grammar {
 
 	g := GrammarParsingGrammar()
@@ -151,8 +317,11 @@ func Compile(grammarText string) Grammar {
 		panic(err)
 	}
 
-	fmt.Println(node.PrettyPrint())
+	grammar := NewGrammar()
 
-	return NewGrammar()
+	createRules(&grammar, node)
+	fmt.Println(grammar)
+
+	return grammar
 
 }

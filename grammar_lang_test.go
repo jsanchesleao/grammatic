@@ -1,6 +1,9 @@
 package grammatic
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 const JSONGrammar = `
 Value := Object
@@ -38,6 +41,25 @@ Bool   := /true|false/
 String := $DoubleQuotedStringFormat`
 
 func TestJSONParsing(t *testing.T) {
+	grammar := Compile(`
+Line := Number
+        Pluses
+        Number
 
-	Compile(JSONGrammar)
+Pluses := Plus*
+
+Number := $NumberFormat
+Plus := /\+/
+Minus := /-/ 
+Spaces := $EmptySpaceFormat (ignore)
+`)
+
+	fmt.Println(grammar.TokenDefs)
+
+	node, err := grammar.Parse("Line", "2 + + + 5")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(node.PrettyPrint())
 }

@@ -20,6 +20,35 @@ const OpenBracesFormat = "^(\\(|\\[|\\{)"
 const CloseBracesFormat = "^(\\)|\\]|\\})"
 const PunctuationFormat = "^[,;:.]"
 
+func GetConvenienceTokenPattern(name string) string {
+	switch name {
+	case "DigitsFormat":
+		return DigitsTokenFormat
+	case "IntFormat":
+		return IntTokenFormat
+	case "FloatFormat":
+		return FloatTokenFormat
+	case "NumberFormat":
+		return NumberTokenFormat
+	case "KeywordFormat":
+		return KeywordFormat
+	case "DoubleQuotedStringFormat":
+		return DoubleQuotedStringFormat
+	case "EmptySpaceFormat":
+		return EmptySpaceFormat
+	case "OperandFormat":
+		return OperandFormat
+	case "OpenBracesFormat":
+		return OpenBracesFormat
+	case "CloseBracesFormat":
+		return CloseBracesFormat
+	case "PunctuationFormat":
+		return PunctuationFormat
+	default:
+		return ""
+	}
+}
+
 func NewTokenDef(tokenType, pattern string) model.TokenDef {
 	regex := regexp.MustCompile(pattern)
 	return model.TokenDef{Type: tokenType, Pattern: regex}
