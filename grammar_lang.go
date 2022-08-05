@@ -18,7 +18,6 @@ func GrammarParsingGrammar() Grammar {
 	g.DefineRule("RuleExpression",
 		g.Or(
 			"TokenExpression",
-			"ConvenienceToken",
 			"SeqExpression",
 			"OrExpression",
 			"ManyExpression",
@@ -285,15 +284,31 @@ func createRules(grammar *Grammar, node *model.Node) *GrammarCombinator {
 
 		ruleNames := []string{}
 		for _, item := range items {
-			ruleName := processSeqExpressionItem(grammar, item)
+			ruleName := processSeqOrExpressionItem(grammar, item)
 			if ruleName != "" {
-				ruleNames = append(ruleNames, processSeqExpressionItem(grammar, item))
+				ruleNames = append(ruleNames, processSeqOrExpressionItem(grammar, item))
 			}
 		}
 
 		seqCombinator := grammar.Seq(ruleNames...)
-
 		return &seqCombinator
+
+	case "OrExpression":
+		firstItem := node.GetNodeWithType("OrExpressionItem")
+		tailItems := node.GetNodeWithType("OrExpressionTail").GetNodesWithType("OrExpressionItem")
+
+		items := append([]*model.Node{firstItem}, tailItems...)
+
+		ruleNames := []string{}
+		for _, item := range items {
+			ruleName := processSeqOrExpressionItem(grammar, item)
+			if ruleName != "" {
+				ruleNames = append(ruleNames, processSeqOrExpressionItem(grammar, item))
+			}
+		}
+
+		orCombinator := grammar.Or(ruleNames...)
+		return &orCombinator
 
 	}
 
@@ -307,6 +322,9 @@ func processToken(grammar *Grammar, node *model.Node, flag string) GrammarCombin
 	pattern := ""
 	if convenienceToken != nil {
 		pattern = lexer.GetConvenienceTokenPattern(convenienceToken.Token.Value[1:])
+		if pattern == "" {
+			panic(fmt.Errorf("Invalid Convenience Token Format: %q", convenienceToken.Token.Value))
+		}
 	} else if token != nil {
 		pattern = fmt.Sprintf("^%s", token.Token.Value[1:len(token.Token.Value)-1])
 	}
@@ -340,8 +358,11 @@ func processInlineRuleExpression(grammar *Grammar, node *model.Node) string {
 
 }
 
-func processSeqExpressionItem(grammar *Grammar, node *model.Node) string {
-	itemNode := node.Rules[0]
+func processSeqOrExpressionItem(grammar *Grammar, node *model.Node) string {
+	itemNode := node
+	if node.Type == "SeqExpressionItem" || node.Type == "OrExpressionItem" {
+		itemNode = &node.Rules[0]
+	}
 
 	switch itemNode.Type {
 	case "RuleName":
@@ -404,6 +425,26 @@ func processSeqExpressionItem(grammar *Grammar, node *model.Node) string {
 			return ruleName.Token.Value
 		}
 		return ""
+
+	case "InlineSeqExpression":
+		seqHead := itemNode.Rules[0]
+		seqTail := itemNode.Rules[1].GetNodesWithType("RuleName")
+
+		seqItems := append([]*model.Node{&seqHead}, seqTail...)
+
+		ruleName := itemNode.Rules[3].Token.Value
+
+		ruleNames := []string{}
+		for _, item := range seqItems {
+			seqRuleName := processSeqOrExpressionItem(grammar, item)
+			if seqRuleName != "" {
+				ruleNames = append(ruleNames, processSeqOrExpressionItem(grammar, item))
+			}
+		}
+
+		seqCombinator := grammar.Seq(ruleNames...)
+		grammar.DefineRule(ruleName, seqCombinator)
+		return ruleName
 	}
 
 	return ""
@@ -423,7 +464,6 @@ func Compile(grammarText string) Grammar {
 	grammar := NewGrammar()
 
 	createRules(&grammar, node)
-	fmt.Println(grammar)
 
 	return grammar
 

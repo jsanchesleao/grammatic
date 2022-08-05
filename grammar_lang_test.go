@@ -25,39 +25,26 @@ Array := LeftBrackets
          RightBrackets
 
 LeftBraces := /\{/
-
 RightBraces := /\}/
-
 LeftBrackets := /\[/
-
 RightBrackets := /\]/
-
 Comma := /,/
-
+Colon := /:/
 Number := $NumberFormat
-
 Bool   := /true|false/
+String := $DoubleQuotedStringFormat
+Space := $EmptySpaceFormat (ignore)
 
-String := $DoubleQuotedStringFormat`
+`
 
 func TestJSONParsing(t *testing.T) {
-	grammar := Compile(`
-Line := LParen
-        Number[Comma]+ as Items
-        RParen
-        (Semicolon? as LineEnd)
+	grammar := Compile(JSONGrammar)
 
-Number := $NumberFormat
-LParen := /\(/
-RParen := /\)/
-Comma := /,/
-Semicolon := /;/
-Spaces := $EmptySpaceFormat (ignore)
-`)
-
-	fmt.Println(grammar.TokenDefs)
-
-	node, err := grammar.Parse("Line", "( 5, 6, 7 );")
+	node, err := grammar.Parse("Value", `
+{
+  "name": "grammatic",
+  "awesome": [true]
+}`)
 	if err != nil {
 		panic(err)
 	}
