@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"grammatic/lexer"
 	"grammatic/model"
+	"strings"
 )
 
 func GrammarParsingGrammar() Grammar {
@@ -17,6 +18,7 @@ func GrammarParsingGrammar() Grammar {
 
 	g.DefineRule("RuleExpression",
 		g.Or(
+			"RuleName",
 			"TokenExpression",
 			"SeqExpression",
 			"OrExpression",
@@ -25,6 +27,9 @@ func GrammarParsingGrammar() Grammar {
 			"OneOrNoneExpression",
 			"ManyWithSeparatorExpression",
 			"OneOrManyWithSeparatorExpression"))
+
+	g.DefineRule("InlineRenameExpression",
+		g.Seq("RuleName", "As", "RuleName"))
 
 	g.DefineRule("ManyExpression",
 		g.Seq("ManyExpressionItem", "Star"))
@@ -88,6 +93,7 @@ func GrammarParsingGrammar() Grammar {
 			"InlineOneOrManyExpression",
 			"InlineOneOrManyWithSeparatorExpression",
 			"InlineOneOrNoneExpression",
+			"InlineRenameExpression",
 			"RuleName"))
 
 	g.DefineRule("SeqExpressionTail",
@@ -128,7 +134,7 @@ func GrammarParsingGrammar() Grammar {
 	g.DefineRule("TokenExpressionFlagValue",
 		g.Seq("LeftParens", "Ignore", "RightParens"))
 
-	g.DefineToken("Token", "^\\/([^\\/]|\\w|\\s|\\W|\\S|\\d|\\D)*?\\/")
+	g.DefineToken("Token", "^\\/(\\\\/|[^/])+?\\/")
 	g.DefineToken("ConvenienceToken", "^\\$\\w+")
 	g.DefineToken("As", "^as")
 	g.DefineToken("Ignore", "^ignore")
@@ -186,6 +192,10 @@ func createRules(grammar *Grammar, node *model.Node) *GrammarCombinator {
 
 	case "RuleExpression":
 		return createRules(grammar, &node.Rules[0])
+
+	case "RuleName":
+		combinator := grammar.Rename(node.Token.Value)
+		return &combinator
 
 	case "ManyExpression":
 		item := node.GetNodeWithType("ManyExpressionItem")
@@ -326,7 +336,10 @@ func processToken(grammar *Grammar, node *model.Node, flag string) GrammarCombin
 			panic(fmt.Errorf("Invalid Convenience Token Format: %q", convenienceToken.Token.Value))
 		}
 	} else if token != nil {
-		pattern = fmt.Sprintf("^%s", token.Token.Value[1:len(token.Token.Value)-1])
+		pattern = strings.ReplaceAll(
+			fmt.Sprintf("^%s", token.Token.Value[1:len(token.Token.Value)-1]),
+			"\\/",
+			"/")
 	}
 
 	if flag == "ignore" {
@@ -375,6 +388,15 @@ func processSeqOrExpressionItem(grammar *Grammar, node *model.Node) string {
 			grammar.DefineRule(ruleName.Token.Value, *combinator)
 		}
 		return ruleName.Token.Value
+
+	case "InlineRenameExpression":
+		originalName := itemNode.Rules[0]
+		newName := itemNode.Rules[2]
+		combinator := createRules(grammar, &originalName)
+		if combinator != nil {
+			grammar.DefineRule(newName.Token.Value, *combinator)
+		}
+		return newName.Token.Value
 
 	case "InlineManyExpression":
 		ruleName := itemNode.GetNodeWithType("RuleName")

@@ -92,6 +92,14 @@ func (g *Grammar) Seq(ruleNames ...string) GrammarCombinator {
 	}
 }
 
+func (g *Grammar) Rename(rule string) GrammarCombinator {
+	return GrammarCombinator{
+		Create: func(ruleType string) *model.Rule {
+			return parser.Rename(ruleType, g.GetRule(rule))
+		},
+	}
+}
+
 func (g *Grammar) OneOrNone(rule string) GrammarCombinator {
 	return GrammarCombinator{
 		Create: func(ruleType string) *model.Rule {
