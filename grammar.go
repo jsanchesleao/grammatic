@@ -6,10 +6,14 @@ import (
 	"grammatic/parser"
 )
 
+type TokenReducer = func([]model.Token, TokenReducerState, model.Token) ([]model.Token, TokenReducerState)
+type TokenReducerState = interface{}
+
 type Grammar struct {
 	Rules             map[string]*model.Rule
 	TokenDefs         []model.TokenDef
 	IgnoredTokenTypes []string
+	TokenReducers     []TokenReducer
 }
 
 type GrammarCombinator struct {
@@ -24,6 +28,7 @@ func NewGrammar() Grammar {
 		Rules:             map[string]*model.Rule{},
 		TokenDefs:         []model.TokenDef{},
 		IgnoredTokenTypes: []string{},
+		TokenReducers:     []TokenReducer{},
 	}
 }
 
@@ -52,6 +57,10 @@ func (g *Grammar) DefineRule(ruleType string, combinator GrammarCombinator) {
 	}
 }
 
+func (g *Grammar) AddTokenReducer(reducer TokenReducer) {
+	g.TokenReducers = append(g.TokenReducers, reducer)
+}
+
 func (g *Grammar) Token(pattern string) GrammarCombinator {
 	return GrammarCombinator{
 		IsToken:        true,
@@ -66,6 +75,11 @@ func (g *Grammar) IgnoredToken(pattern string) GrammarCombinator {
 		IsIgnoredToken: true,
 		Pattern:        pattern,
 	}
+}
+
+func (g *Grammar) DefineVirtualTokenRule(name string) {
+	g.DeclareRule(name)
+	*g.Rules[name] = *parser.RuleTokenType(name, name)
 }
 
 func (g *Grammar) Or(ruleNames ...string) GrammarCombinator {
@@ -188,5 +202,15 @@ func (g *Grammar) Parse(ruleType, input string) (*model.Node, error) {
 
 	rule := parser.Seq("Root", g.GetRule(ruleType), parser.RuleTokenType("EOF", "TOKEN_EOF"))
 
-	return parser.ParseRule(*rule, g.IgnoredTokenTypes, tokens)
+	tokensToParse := tokens
+	for _, tokenReducer := range g.TokenReducers {
+		result := []model.Token{}
+		var state interface{} = nil
+		for _, token := range tokensToParse {
+			result, state = tokenReducer(result, state, token)
+		}
+		tokensToParse = result
+	}
+
+	return parser.ParseRule(*rule, g.IgnoredTokenTypes, tokensToParse)
 }

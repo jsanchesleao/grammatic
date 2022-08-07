@@ -6,8 +6,7 @@ import (
 	"strconv"
 )
 
-const grammarDef = `
-
+const mathGrammarDef = `
 Expr := Term | TermOperation
 
 Term := Factor | FactorOperation 
@@ -33,15 +32,13 @@ Div := /\//
 Number := /\d+/
 LParen := /\(/
 RParen := /\)/
-Space := $EmptySpaceFormat (ignore)
+Space := $EmptySpaceFormat (ignore)`
 
-`
-
-var grammar = grammatic.Compile(grammarDef)
+var mathGrammar = grammatic.Compile(mathGrammarDef)
 
 func EvalExpression(expression string) float64 {
 
-	tree, err := grammar.Parse("Expr", expression)
+	tree, err := mathGrammar.Parse("Expr", expression)
 
 	if err != nil {
 		panic(err)
@@ -56,7 +53,7 @@ func reduceMathTree(node *model.Node) float64 {
 	case "Root":
 		return reduceMathTree(node.GetNodeWithType("Expr"))
 	case "Expr", "Term", "Factor", "LeftTerm", "RightTerm", "LeftFactor", "RightFactor":
-		return reduceMathTree(&node.Rules[0])
+		return reduceMathTree(node.GetNodeByIndex(0))
 	case "Number":
 		number, err := strconv.ParseFloat(node.Token.Value, 64)
 		if err != nil {
@@ -66,7 +63,7 @@ func reduceMathTree(node *model.Node) float64 {
 	case "InlineExpr":
 		return reduceMathTree(node.GetNodeWithType("Expr"))
 	case "TermOperation":
-		operation := node.GetNodeWithType("TermOperator").Rules[0].Token.Value
+		operation := node.GetNodeWithType("TermOperator").GetNodeByIndex(0).Token.Value
 		left := reduceMathTree(node.GetNodeWithType("LeftTerm"))
 		right := reduceMathTree(node.GetNodeWithType("RightTerm"))
 		if operation == "+" {
@@ -75,7 +72,7 @@ func reduceMathTree(node *model.Node) float64 {
 			return left - right
 		}
 	case "FactorOperation":
-		operation := node.GetNodeWithType("FactorOperator").Rules[0].Token.Value
+		operation := node.GetNodeWithType("FactorOperator").GetNodeByIndex(0).Token.Value
 		left := reduceMathTree(node.GetNodeWithType("LeftFactor"))
 		right := reduceMathTree(node.GetNodeWithType("RightFactor"))
 		if operation == "*" {

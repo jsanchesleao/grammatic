@@ -11,7 +11,13 @@ func GrammarParsingGrammar() Grammar {
 
 	g := NewGrammar()
 
-	g.DefineRule("Grammar", g.OneOrMany("GrammarRule"))
+	g.DefineRule("Grammar", g.Seq("GrammarRules", "VirtualTokens"))
+
+	g.DefineRule("GrammarRules", g.OneOrMany("GrammarRule"))
+	g.DefineRule("VirtualTokens", g.OneOrNone("VirtualTokenStatement"))
+
+	g.DefineRule("VirtualTokenStatement", g.Seq("Virtual", "VirtualTokenNames"))
+	g.DefineRule("VirtualTokenNames", g.OneOrMany("RuleName"))
 
 	g.DefineRule("GrammarRule",
 		g.Seq("RuleName", "Assignment", "RuleExpression"))
@@ -148,6 +154,7 @@ func GrammarParsingGrammar() Grammar {
 	g.DefineToken("LeftParens", "^\\(")
 	g.DefineToken("RightParens", "^\\)")
 	g.DefineToken("Assignment", "^:=")
+	g.DefineToken("Virtual", "^:virtual:")
 
 	g.DefineIgnoredToken("Comment", "^#.*?\\n")
 	g.DefineIgnoredToken("Space", lexer.EmptySpaceFormat)
@@ -165,10 +172,18 @@ func createRules(grammar *Grammar, node *model.Node) *GrammarCombinator {
 		return nil
 
 	case "Grammar":
-		grammarRuleNodes := node.GetNodesWithType("GrammarRule")
+		grammarRuleNodes := node.GetNodeWithType("GrammarRules").GetNodesWithType("GrammarRule")
 		for _, grammarRuleNode := range grammarRuleNodes {
 			createRules(grammar, grammarRuleNode)
 		}
+		virtual := node.GetNodeWithType("VirtualTokens").GetNodeWithType("VirtualTokenStatement")
+		if virtual != nil {
+			names := virtual.GetNodeWithType("VirtualTokenNames").GetNodesWithType("RuleName")
+			for _, name := range names {
+				grammar.DefineVirtualTokenRule(name.Token.Value)
+			}
+		}
+
 		return nil
 
 	case "GrammarRule":
