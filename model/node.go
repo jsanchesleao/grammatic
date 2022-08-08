@@ -63,6 +63,10 @@ func (n *Node) GetNodeByIndex(index int) *Node {
 	return nil
 }
 
+func (n *Node) GetAllNodes() []Node {
+	return n.Rules
+}
+
 func formatString(text string) string {
 	noBackslashes := strings.ReplaceAll(text, "\\", "\\\\")
 	return strings.ReplaceAll(noBackslashes, "\n", "\\n")
