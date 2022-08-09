@@ -1,4 +1,4 @@
-module grammatic
+module github.com/jsanchesleao/grammatic
 
 go 1.18
 
