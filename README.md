@@ -2,6 +2,10 @@
 
 Grammatic is a parser library written in pure golang, that provides both a grammar language and a programmable API, that is powerful enough to parse common programming and data languages.
 
+## Installation
+
+`go get github.com/jsanchesleao/grammatic@v1.0.1` 
+
 ## Quick Start
 
 ```go
