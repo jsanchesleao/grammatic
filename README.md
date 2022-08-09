@@ -185,16 +185,96 @@ List := LeftParen (ListItem[Separator]* as ListBody) RightParen
 ```
 
 ### Or Rules
-to be written
+
+A rule can also be derived from a list of possibilities. For that you can use the `or` operator, that is defined with the `pipe` operator, like this:
+
+```
+Value := Object
+       | Array
+       | Number
+       | String
+       | Bool
+```
+
+Or rules can also use inline rules, the same way as with the Sequences.
 
 ## Tree Api
-to be written
+
+A Grammar object can be created with the `Compile` function. This grammar provides a `Parse` method, which accepts a root rule and the input string.
+This method returns a tree node and an error.
+
+This tree node holds the whole produced data that came from the defined rules.
+You can actually navigate this structure and visualise it:
 
 ### PrettyPrint
-to be written
+	
+This method will generate a string that shows the internal structure of the tree.
+It will generate an output like this:
 
+```
+`Root
+  ├─Value
+  │ └─Object
+  │   ├─LeftBraces • {
+  │   ├─ObjectBody
+  │   │ ├─ObjectEntry
+  │   │ │ ├─String • "name"
+  │   │ │ ├─Colon • :
+  │   │ │ └─Value
+  │   │ │   └─String • "grammatic"
+  │   │ ├─Comma • ,
+  │   │ └─ObjectEntry
+  │   │   ├─String • "awesome"
+  │   │   ├─Colon • :
+  │   │   └─Value
+  │   │     └─Array
+  │   │       ├─LeftBrackets • [
+  │   │       ├─ArrayBody
+  │   │       │ └─Value
+  │   │       │   └─Bool • true
+  │   │       └─RightBrackets • ]
+  │   └─RightBraces • }
+  └─EOF • 
+```
+	
+It can be very useful to see this node while navigating the tree and also to verify if the structure is being generated as expected.
+	
 ### Fetching Nodes
-to be written
+
+The node object provides some querying methods to retrieve child nodes and values:
+
+- GetNodeWithType(string)
+  Retrieves ONE SINGLE CHILD NODE with the specified type, or nil, if none was found
+  
+- GetNodesWithType(string)
+  Retrieves ALL CHILD NODES with the specified type. (Only goes down one level) 
+
+- GetNodeByIndex(int)
+  Retrieves the nth child node. This will return nil if an invalid index is provided.
+  
+- GetAllNodes()
+  Retrieves ALL DIRECT CHILD NODES.
+  
+If a node is a leaf node from the tree, it will have the field `Token` with a non nil value.
+
+### The Token Object
+
+The token object will have the following properties:
+
+- Value
+  The actual chunk of the original input matched by the token defined in the grammar (the regex rule)
+- Type
+  The type of the token, as defined in the grammar. It should be the same as the name of the rule.
+- Col and Line
+  The position of the token in the original input.
+  When an error occurs, this is used to point the user where the syntax error occurred.
+
 
 ### Recommended Processing Method
-to be written
+
+When processing the tree, usually it's a good idea to use a recursive function, that holds a switch statement by the node type, that fetches the interesting child nodes, produces some values and/or calls itself again with the child nodes, so the values are recursively generated, until a leaf node is found.
+
+You can check the `examples` folder for usages of this method, and for more advanced parsing techniques, like virtual tokens and indentation aware parse.
+
+
+	
