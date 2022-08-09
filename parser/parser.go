@@ -2,7 +2,7 @@ package parser
 
 import (
 	"fmt"
-	"grammatic/model"
+	"github.com/jsanchesleao/grammatic/model"
 )
 
 func shouldIgnore(ignoredTypes []string, token *model.Token) bool {

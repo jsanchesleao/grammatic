@@ -2,7 +2,7 @@ package lexer
 
 import (
 	"fmt"
-	"grammatic/model"
+	"github.com/jsanchesleao/grammatic/model"
 	"regexp"
 )
 

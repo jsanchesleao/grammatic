@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"grammatic/model"
+	"github.com/jsanchesleao/grammatic/model"
 )
 
 func Or(ruleType string, rules ...*model.Rule) *model.Rule {

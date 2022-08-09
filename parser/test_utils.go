@@ -1,6 +1,6 @@
 package parser
 
-import "grammatic/model"
+import "github.com/jsanchesleao/grammatic/model"
 
 var keyword_token = model.Token{Type: "TOKEN_KEYWORD", Value: "test", Line: 1, Col: 1}
 var string_token = model.Token{Type: "TOKEN_STRING", Value: "\"test\"", Line: 1, Col: 1}

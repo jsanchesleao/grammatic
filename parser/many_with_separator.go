@@ -2,7 +2,7 @@ package parser
 
 import (
 	"fmt"
-	"grammatic/model"
+	"github.com/jsanchesleao/grammatic/model"
 )
 
 func ManyWithSeparator(typeName string, rule *model.Rule, separator *model.Rule) *model.Rule {

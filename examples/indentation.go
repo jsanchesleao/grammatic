@@ -2,8 +2,8 @@ package examples
 
 import (
 	"fmt"
-	"grammatic"
-	"grammatic/model"
+	"github.com/jsanchesleao/grammatic"
+	"github.com/jsanchesleao/grammatic/model"
 	"strings"
 )
 

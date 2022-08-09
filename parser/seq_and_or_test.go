@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"grammatic/model"
+	"github.com/jsanchesleao/grammatic/model"
 	"testing"
 )
 

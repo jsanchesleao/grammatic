@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"grammatic/model"
+	"github.com/jsanchesleao/grammatic/model"
 )
 
 func Many(ruleType string, rule *model.Rule) *model.Rule {

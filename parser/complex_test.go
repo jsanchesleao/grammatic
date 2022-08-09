@@ -2,8 +2,8 @@ package parser
 
 import (
 	"fmt"
-	"grammatic/lexer"
-	"grammatic/model"
+	"github.com/jsanchesleao/grammatic/lexer"
+	"github.com/jsanchesleao/grammatic/model"
 	"testing"
 )
 

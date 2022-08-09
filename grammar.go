@@ -1,9 +1,9 @@
 package grammatic
 
 import (
-	"grammatic/lexer"
-	"grammatic/model"
-	"grammatic/parser"
+	"github.com/jsanchesleao/grammatic/lexer"
+	"github.com/jsanchesleao/grammatic/model"
+	"github.com/jsanchesleao/grammatic/parser"
 )
 
 type TokenReducer = func([]model.Token, TokenReducerState, model.Token) ([]model.Token, TokenReducerState)

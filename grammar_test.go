@@ -1,7 +1,7 @@
 package grammatic
 
 import (
-	"grammatic/lexer"
+	"github.com/jsanchesleao/grammatic/lexer"
 	"testing"
 )
 

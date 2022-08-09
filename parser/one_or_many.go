@@ -1,6 +1,6 @@
 package parser
 
-import "grammatic/model"
+import "github.com/jsanchesleao/grammatic/model"
 
 func OneOrMany(ruleType string, rule *model.Rule) *model.Rule {
 	return &model.Rule{

@@ -2,7 +2,7 @@ package parser
 
 import (
 	"fmt"
-	"grammatic/model"
+	"github.com/jsanchesleao/grammatic/model"
 )
 
 func Seq(ruleType string, rules ...*model.Rule) *model.Rule {

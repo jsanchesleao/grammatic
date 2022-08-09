@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"grammatic/model"
+	"github.com/jsanchesleao/grammatic/model"
 	"testing"
 )
 

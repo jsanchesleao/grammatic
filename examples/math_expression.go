@@ -1,8 +1,8 @@
 package examples
 
 import (
-	"grammatic"
-	"grammatic/model"
+	"github.com/jsanchesleao/grammatic"
+	"github.com/jsanchesleao/grammatic/model"
 	"strconv"
 )
 
