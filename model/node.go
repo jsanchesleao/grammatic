@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// A Parse Tree Node, which is the basic unit of the parsing result
 type Node struct {
 	Type  string
 	Token *Token
@@ -38,6 +39,7 @@ func (n *Node) format(indentation string, firstChild, lastChild bool) string {
 	return output
 }
 
+// Returns a slice of child nodes with the given type
 func (n *Node) GetNodesWithType(typeName string) []*Node {
 	nodes := []*Node{}
 	for index := range n.Rules {
@@ -48,6 +50,7 @@ func (n *Node) GetNodesWithType(typeName string) []*Node {
 	return nodes
 }
 
+// Returns a single child node of the given type, or nil if none exists
 func (n *Node) GetNodeWithType(typeName string) *Node {
 	nodes := n.GetNodesWithType(typeName)
 	if len(nodes) > 0 {
@@ -56,6 +59,7 @@ func (n *Node) GetNodeWithType(typeName string) *Node {
 	return nil
 }
 
+// Returns the nth child node, or nil if out of bounds
 func (n *Node) GetNodeByIndex(index int) *Node {
 	if index < len(n.Rules) {
 		return &n.Rules[index]
@@ -63,6 +67,7 @@ func (n *Node) GetNodeByIndex(index int) *Node {
 	return nil
 }
 
+// Returns all child nodes as a slice
 func (n *Node) GetAllNodes() []Node {
 	return n.Rules
 }
@@ -72,6 +77,7 @@ func formatString(text string) string {
 	return strings.ReplaceAll(noBackslashes, "\n", "\\n")
 }
 
+// Returns a string representation of the entire tree beneath the node
 func (m *Node) PrettyPrint() string {
 	return fmt.Sprintln(m.format("", true, true))
 }

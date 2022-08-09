@@ -488,6 +488,8 @@ func processSeqOrExpressionItem(grammar *Grammar, node *model.Node) string {
 
 }
 
+// Accepts a string containing a grammar definition and returns a Grammar object;
+// It panics if the grammar syntax is invalid
 func Compile(grammarText string) Grammar {
 
 	g := GrammarParsingGrammar()

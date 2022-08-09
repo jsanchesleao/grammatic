@@ -4,7 +4,7 @@ Grammatic is a parser library written in pure golang, that provides both a gramm
 
 ## Installation
 
-`go get github.com/jsanchesleao/grammatic@v1.0.1` 
+`go get github.com/jsanchesleao/grammatic@v1.0.2` 
 
 ## Quick Start
 

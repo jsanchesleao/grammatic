@@ -193,6 +193,7 @@ func (g *Grammar) RunRule(ruleType, input string) model.RuleResultIterator {
 	return g.GetRule(ruleType).Check(validTokens)
 }
 
+// Will return a tree or an error after applying the rule defined as ruleType to the input string.
 func (g *Grammar) Parse(ruleType, input string) (*model.Node, error) {
 	tokens, lexerError := lexer.ExtractTokens(input, g.TokenDefs)
 
